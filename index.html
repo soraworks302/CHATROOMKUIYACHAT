@@ -1055,6 +1055,23 @@ async function clearMyTyping(){
 /* ======================================================================
    messages: send / render / edit / delete / react / read
    ====================================================================== */
+// Catbox.moe への大容量ファイル（最大200MB）アップロード関数
+async function uploadToCatbox(file) {
+  const formData = new FormData();
+  formData.append('reqtype', 'fileupload');
+  formData.append('fileToUpload', file);
+
+  // CORS制限を回避して送信
+  const response = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://catbox.moe/user/api.php'), {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!response.ok) throw new Error('アップロードに失敗しました');
+
+  const fileUrl = (await response.text()).trim();
+  return fileUrl;
+}
 async function pushMessage(msg){
   db.ref('rooms/' + room + '/messages').push(msg);
 }
@@ -1166,16 +1183,22 @@ function buildMessageRow(m, presence, readTimes){
       }
     };
     bubble.appendChild(img);
-  } else if(m.type==='sticker'){
+ } else if(m.type==='sticker'){
     bubble.innerHTML = `<img class="sticker-img" src="${m.dataURL}" alt="sticker">`;
-  } else if(m.type==='gif' && m.mediaKey){
-    bubble.dataset.mediaKey = m.mediaKey;
-    bubble.dataset.mtype = 'gif';
-    bubble.innerHTML = `<span class="media-loading">読み込み中…</span>`;
+  } else if(m.mediaUrl || m.url){
+    // Catboxなどの直URLがある場合は直接再生・表示
+    const src = m.mediaUrl || m.url;
+    if(m.type === 'image'){
+      bubble.innerHTML = `<img src="${src}" style="max-width:100%; border-radius:12px;" loading="lazy">`;
+    } else if(m.type === 'video'){
+      bubble.innerHTML = `<video src="${src}" controls style="max-width:100%; border-radius:12px;"></video>`;
+    } else if(m.type === 'audio' || m.type === 'voice'){
+      bubble.innerHTML = `<audio src="${src}" controls style="width:100%;"></audio>`;
+    } else {
+      bubble.innerHTML = `<a href="${src}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">ファイルを開く</a>`;
+    }
   } else {
-    bubble.dataset.mediaKey = m.mediaKey||'';
-    bubble.dataset.mtype = m.type;
-    bubble.innerHTML = `<span class="media-loading">読み込み中…</span>`;
+    bubble.textContent = 'ファイルを読み込めませんでした';
   }
   bwrap.appendChild(bubble);
 
@@ -1389,7 +1412,18 @@ document.getElementById('attachBtn').addEventListener('click', ()=>{
   });
 });
 
-const MAX_MEDIA_BYTES = 150 * 1024 * 1024;
+const MAX_MEDIA_BYTES = 200 * 1024 * 1024; // Catboxの上限200MBに引き上げ
+
+// DataURL（画像圧縮データ等）を Blob に変換する補助関数
+function dataURLtoBlob(dataurl) {
+  const arr = dataurl.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) u8arr[n] = bstr.charCodeAt(n);
+  return new Blob([u8arr], { type: mime });
+}
 
 document.getElementById('fileInputImage').addEventListener('change', async e=>{
   const file = e.target.files[0]; e.target.value=''; if(!file) return;
@@ -1404,38 +1438,59 @@ document.getElementById('fileInputImage').addEventListener('change', async e=>{
     return;
   }
   const dataURL = await resizeImageFile(file, 1280, 0.82);
-  await sendMedia('image', dataURL);
+  const blob = dataURLtoBlob(dataURL);
+  await sendMedia('image', blob);
 });
+
 document.getElementById('fileInputVideo').addEventListener('change', async e=>{
   const file = e.target.files[0]; e.target.value=''; if(!file) return;
-  if(file.size > MAX_MEDIA_BYTES){ toast("動画は150MBまでです"); return; }
+  if(file.size > MAX_MEDIA_BYTES){ toast("動画は200MBまでです"); return; }
   await sendMedia('video', file);
 });
+
 document.getElementById('fileInputAudio').addEventListener('change', async e=>{
   const file = e.target.files[0]; e.target.value=''; if(!file) return;
-  if(file.size > MAX_MEDIA_BYTES){ toast("音声ファイルは150MBまでです"); return; }
+  if(file.size > MAX_MEDIA_BYTES){ toast("音声ファイルは200MBまでです"); return; }
   await sendMedia('audio', file);
 });
+
 document.getElementById('gifFileBtn').addEventListener('click', ()=> document.getElementById('fileInputGif').click());
 document.getElementById('fileInputGif').addEventListener('change', async e=>{
   const file = e.target.files[0]; e.target.value=''; if(!file) return;
   if(file.type!=='image/gif'){ toast("GIFファイルを選んでください"); return; }
-  if(file.size > MAX_MEDIA_BYTES){ toast("GIFは150MBまでです"); return; }
-  const mediaKey = crypto.randomUUID();
-  const ok = await setJSON(K_MEDIA(mediaKey), true, file);
-  if(!ok){ toast("GIFの保存に失敗しました"); return; }
-  mediaCache.set(mediaKey, file);
+  if(file.size > MAX_MEDIA_BYTES){ toast("GIFは200MBまでです"); return; }
   document.getElementById('stickerPopover').classList.add('hidden');
-  await pushMessage({ id:crypto.randomUUID(), pid:myId, name:myProfile.name, ts:nowTs(), type:'gif', mediaKey, reactions:{} });
+  await sendMedia('gif', file);
 });
-async function sendMedia(type, fileOrData){
-  const size = fileOrData instanceof Blob ? fileOrData.size : 0;
-  if(size > MAX_MEDIA_BYTES){ toast("ファイルサイズが大きすぎます"); return; }
-  const mediaKey = crypto.randomUUID();
-  const ok = await setJSON(K_MEDIA(mediaKey), true, fileOrData);
-  if(!ok){ toast("アップロードに失敗しました（保存容量を確認してください）"); return; }
-  mediaCache.set(mediaKey, fileOrData);
-  await pushMessage({ id:crypto.randomUUID(), pid:myId, name:myProfile.name, ts:nowTs(), type, mediaKey, reactions:{} });
+
+// Catboxへアップロードして送信する共通処理
+async function sendMedia(type, fileOrBlob){
+  const size = fileOrBlob.size || 0;
+  if(size > MAX_MEDIA_BYTES){ toast("ファイルサイズが大きすぎます（最大200MB）"); return; }
+
+  toast("アップロード中…");
+  try {
+    const ext = type === 'image' ? 'jpg' : type === 'voice' ? 'webm' : type === 'gif' ? 'gif' : 'bin';
+    const uploadFile = (fileOrBlob instanceof File) 
+      ? fileOrBlob 
+      : new File([fileOrBlob], `upload_${Date.now()}.${ext}`);
+
+    const mediaUrl = await uploadToCatbox(uploadFile);
+
+    await pushMessage({
+      id: crypto.randomUUID(),
+      pid: myId,
+      name: myProfile.name,
+      ts: nowTs(),
+      type,
+      mediaUrl,
+      reactions: {}
+    });
+    toast("送信しました");
+  } catch(err) {
+    console.error(err);
+    toast("アップロードに失敗しました");
+  }
 }
 
 /* ---- voice message (max 10s) ---- */
