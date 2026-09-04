@@ -1051,38 +1051,43 @@ async function clearMyTyping(){
 /* ======================================================================
    messages: send / render / edit / delete / react / read
    ====================================================================== */
-// Pixeldrainへのアップロード処理（オンライン機能はFirebase、メディア保存はPixeldrainのまま）
-// 失敗時に理由が分かるよう、HTTPステータスやレスポンス本文もログに残す。
+// Pixeldrainへのアップロード処理
+// APIキーはこのファイルには一切書かず、Cloudflare Worker（プロキシ）側にのみ
+// Secretとして保持する。ブラウザは自前のWorkerにファイルを送るだけで、
+// Pixeldrainへの実際の送信とAPIキーの付与はWorker側で行う。
+// セットアップ手順は setup-guide.md を参照。
+const UPLOAD_PROXY_URL = "https://quiet-silence-dab5.sora302sora.workers.dev";
+
 async function uploadToPixeldrain(file) {
+  if(UPLOAD_PROXY_URL.includes('REPLACE-WITH-YOUR-WORKER-URL')){
+    throw new Error('アップロード先が未設定です（UPLOAD_PROXY_URLをWorkerのURLに書き換えてください）');
+  }
+
   const formData = new FormData();
   formData.append('file', file, file.name);
 
   let response;
   try{
-    response = await fetch('https://pixeldrain.com/api/file', {
+    response = await fetch(UPLOAD_PROXY_URL, {
       method: 'POST',
       body: formData
     });
   }catch(networkErr){
     // fetch自体が例外を投げるのは、オフライン/DNS失敗/CORSブロックなどネットワーク起因。
     // モバイル回線が不安定な場合にここに来やすい。
-    console.error('pixeldrain fetch failed', networkErr);
+    console.error('upload proxy fetch failed', networkErr);
     throw new Error('ネットワークエラー: アップロード先に接続できませんでした');
   }
 
-  if (!response.ok) {
-    const bodyText = await response.text().catch(()=> '');
-    console.error('pixeldrain upload failed', response.status, bodyText);
-    throw new Error(`アップロード失敗（HTTP ${response.status}）`);
+  const json = await response.json().catch(()=> null);
+
+  if (!response.ok || !json || !json.success) {
+    const msg = (json && json.message) ? json.message : `アップロード失敗（HTTP ${response.status}）`;
+    console.error('upload proxy reported failure', response.status, json);
+    throw new Error(msg);
   }
 
-  const json = await response.json();
-  if (!json.success) {
-    console.error('pixeldrain reported failure', json);
-    throw new Error('アップロード処理に失敗しました');
-  }
-
-  return `https://pixeldrain.com/api/file/${json.id}`;
+  return json.url;
 }
 
 async function pushMessage(msg){
