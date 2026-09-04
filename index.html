@@ -318,56 +318,8 @@ input[type=range]{width:100%;}
   const db = firebase.database();
   const storage = firebase.storage();
 
-  let currentRoomKey = "";
-
-  // 2. 画面操作・イベント設定
-  document.addEventListener('DOMContentLoaded', () => {
-    const joinBtn = document.querySelector('.btn-glossy'); // 「部屋に入る」ボタン
-    const roomInput = document.querySelector('.field input'); // 合言葉入力欄
-    const entryScreen = document.getElementById('entryScreen');
-    const chatScreen = document.getElementById('chatScreen');
-    const roomTitle = document.querySelector('header.bar h2');
-
-    if (joinBtn) {
-      joinBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const roomKey = roomInput ? roomInput.value.trim() : '';
-
-        if (!roomKey) {
-          alert('合言葉を入力してください');
-          return;
-        }
-
-        currentRoomKey = roomKey;
-
-        // ヘッダーに入力した合言葉を反映
-        if (roomTitle) {
-          roomTitle.childNodes[0].textContent = roomKey + ' ';
-        }
-
-        // 入力画面を非表示にし、チャット画面を表示
-        if (entryScreen && chatScreen) {
-          entryScreen.classList.add('hidden');
-          chatScreen.classList.remove('hidden');
-        }
-
-        // 指定した部屋のメッセージ取得を開始
-        listenToRoomMessages(roomKey);
-      });
-    }
-  });
-
-  // 3. Firebaseからメッセージデータを受信する処理
-  function listenToRoomMessages(roomKey) {
-    const messagesRef = db.ref('rooms/' + roomKey + '/messages');
-    messagesRef.off(); // 二重取得を防止
-
-    messagesRef.on('child_added', (snapshot) => {
-      const msg = snapshot.val();
-      console.log('新着メッセージ受信:', msg);
-      // メッセージ送信機能実装時にここへ画面描画処理を追加します
-    });
-  }
+  // 部屋への入室・メッセージ受信は下部のメイン処理(enterRoom関数)が
+  // db を使って一括で行うため、ここでは Firebase の初期化のみ行う。
 </script>
 <!-- Firebaseの追加（ここまで） -->
 </head>
@@ -1745,30 +1697,6 @@ async function joinCallSession(){
     }
   }, 300);
 }
-
-  const call = await readCall();
-  const existingIds = Object.keys((call.participants)||{}).filter(pid=>pid!==myId);
-  call.active = true; call.sessionId = callSessionId; call.kind = callKind;
-  call.participants = call.participants || {};
-  call.participants[myId] = { name: myProfile.name, ts: nowTs() };
-  await writeCall(call);
-
-  // I am the new joiner: initiate offers to everyone already present
-  for(const pid of existingIds){ await callToPeer(pid); }
-
-  clearInterval(window._callHbTimer);
-  window._callHbTimer = setInterval(async ()=>{
-    if(!inCall) return;
-    const c = await readCall();
-    if(c.sessionId!==callSessionId){ return; }
-    c.participants = c.participants || {};
-    c.participants[myId] = { name: myProfile.name, ts: nowTs() };
-    // prune stale
-    const cutoff = nowTs()-15000;
-    Object.keys(c.participants).forEach(pid=>{ if(c.participants[pid].ts<cutoff) delete c.participants[pid]; });
-    await writeCall(c);
-  }, 5000);
-}
 async function pollCallSession(){
   if(!inCall) return;
   const call = await readCall();
@@ -1951,26 +1879,6 @@ function renderCallTiles(){
     const tile = document.createElement('div'); 
     tile.className = 'tile call-tile';
     tile.setAttribute('data-pid', pid);
-    if(callKind==='video'){
-      const v = document.createElement('video'); v.autoplay=true; v.playsInline=true; v.srcObject = entry.remoteStream;
-      tile.appendChild(v);
-    } else {
-      tile.innerHTML = avatarHtml('friend',null,null,64).replace('class="avatar"','class="avatar tile-avatar"');
-    }
-    const nm = document.createElement('div'); nm.className='tile-name'; nm.textContent = '通話相手';
-    tile.appendChild(nm);
-    wrap.appendChild(tile);
-  });
-}
-  const peerIds = Object.keys(pcMap);
-  if(peerIds.length===0){
-    const w = document.createElement('div'); w.className='tile waiting';
-    w.textContent = '先に部屋を開いています。友だちが来るのを待っています…';
-    wrap.appendChild(w);
-  }
-  peerIds.forEach(pid=>{
-    const entry = pcMap[pid];
-    const tile = document.createElement('div'); tile.className='tile';
     if(callKind==='video'){
       const v = document.createElement('video'); v.autoplay=true; v.playsInline=true; v.srcObject = entry.remoteStream;
       tile.appendChild(v);
