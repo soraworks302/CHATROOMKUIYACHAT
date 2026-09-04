@@ -287,6 +287,12 @@ input[type=range]{width:100%;}
   .tile{width:44vw;}
   .msg-row{max-width:92%;}
 }
+/* 既存のスタイルの最後（ </style> の直前 ）に追加 */
+    .call-tile.speaking, .avatar.speaking {
+      box-shadow: 0 0 0 3px #00e676, 0 0 15px rgba(0, 230, 118, 0.8) !important;
+      border-color: #00e676 !important;
+      transition: box-shadow 0.1s ease;
+    }  
 </style>
 <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1.29.1/index.js"></script>
 <!-- Firebaseの追加（ここから） -->
@@ -1596,10 +1602,45 @@ async function sendSignal(type, to, extra){
 document.getElementById('callAudioBtn').addEventListener('click', ()=> openOrJoinCall('audio'));
 document.getElementById('callVideoBtn').addEventListener('click', ()=> openOrJoinCall('video'));
 
+/* ---- 発言検知（マイク音量で光らせる処理） ---- */
+function setupVoiceActivity(stream, targetElem) {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaStreamSource(stream);
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    function checkVolume() {
+      if (!inCall) {
+        try { audioCtx.close(); } catch(e){}
+        return;
+      }
+      analyser.getByteFrequencyData(dataArray);
+      const volume = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+
+      if (targetElem) {
+        if (volume > 10) { // 音量閾値（10以上で発話と判定）
+          targetElem.classList.add('speaking');
+        } else {
+          targetElem.classList.remove('speaking');
+        }
+      }
+      requestAnimationFrame(checkVolume);
+    }
+    checkVolume();
+  } catch (e) {
+    console.error("AudioContext error:", e);
+  }
+}
+
+/* ---- 通話接続・参加処理 ---- */
 async function openOrJoinCall(kind){
   if(inCall){ toast("すでに通話中です"); return; }
   const call = await readCall();
-  if(call.active && call.participants && Object.keys(call.participants).length>0){
+  if(call.active && call.participants && Object.keys(call.participants).length > 0){
     callSessionId = call.sessionId; callKind = call.kind || kind;
   } else {
     callSessionId = crypto.randomUUID(); callKind = kind;
@@ -1607,16 +1648,49 @@ async function openOrJoinCall(kind){
   await startLocalMedia(callKind);
   await joinCallSession();
 }
+
 async function startLocalMedia(kind){
   try{
-    localStream = await navigator.mediaDevices.getUserMedia({ audio:true, video: kind==='video' });
-  }catch(err){ toast("マイク/カメラを使用できませんでした"); throw err; }
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: kind === 'video' });
+  } catch(err){ toast("マイク/カメラを使用できませんでした"); throw err; }
 }
+
 async function joinCallSession(){
   inCall = true;
   document.getElementById('callOverlay').classList.add('show');
-  document.getElementById('callTitle').textContent = (callKind==='video'?'ビデオ通話':'音声通話');
+  document.getElementById('callTitle').textContent = (callKind === 'video' ? 'ビデオ通話' : '音声通話');
+
+  // 最新の通話データを取得・更新
+  const call = await readCall();
+  call.active = true;
+  call.sessionId = callSessionId;
+  call.kind = callKind;
+  call.participants = call.participants || {};
+
+  // 部屋にすでにいる既存の参加者全員へ接続Offerを送信
+  Object.keys(call.participants).forEach(targetPid => {
+    if (targetPid !== myId && (!pcMap[targetPid] || pcMap[targetPid].pc.connectionState === 'closed')) {
+      if (typeof createPeerConnection === 'function') {
+        createPeerConnection(targetPid, true);
+      }
+    }
+  });
+
+  // 自分を参加者リストへ登録して書き込み
+  call.participants[myId] = { joinedAt: Date.now() };
+  await writeCall(call);
+
+  // タイル描画
   renderCallTiles();
+
+  // 自分のマイク音量検知（光るエフェクト）を開始
+  setTimeout(() => {
+    const myTile = document.querySelector(`.call-tile[data-pid="${myId}"]`) || document.getElementById('callOverlay');
+    if (localStream && myTile) {
+      setupVoiceActivity(localStream, myTile);
+    }
+  }, 300);
+}
 
   const call = await readCall();
   const existingIds = Object.keys((call.participants)||{}).filter(pid=>pid!==myId);
@@ -1665,12 +1739,18 @@ function ensurePeerConnection(peerId){
   if(pcMap[peerId]) return pcMap[peerId];
   const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
   const entry = { pc, remoteStream: new MediaStream() };
-  pc.onicecandidate = e=>{ if(e.candidate) sendSignal('candidate', peerId, {candidate:e.candidate}); };
-  pc.ontrack = e=>{
-    e.streams[0].getTracks().forEach(t=> entry.remoteStream.addTrack(t));
+
+  // 自分のマイク/カメラの音声・映像トラックを接続に追加
+  if (localStream) {
+    localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+  }
+
+  pc.onicecandidate = e => { if(e.candidate) sendSignal('candidate', peerId, {candidate:e.candidate}); };
+  pc.ontrack = e => {
+    e.streams[0].getTracks().forEach(t => entry.remoteStream.addTrack(t));
     renderCallTiles();
   };
-  pc.onconnectionstatechange = ()=>{
+  pc.onconnectionstatechange = () => {
     if(['failed','disconnected','closed'].includes(pc.connectionState)){
       removePeer(peerId);
     }
@@ -1678,12 +1758,17 @@ function ensurePeerConnection(peerId){
   pcMap[peerId] = entry;
   return entry;
 }
+
 function removePeer(peerId){
   const entry = pcMap[peerId];
   if(entry){ try{entry.pc.close();}catch(e){} delete pcMap[peerId]; }
   renderCallTiles();
 }
+
 async function handleSignal(sig){
+  const fromPid = sig.from;
+
+  // 1. 通話への招待を受けたとき
   if(sig.type==='call-invite'){
     if(inCall) return;
     document.getElementById('incomingCard').classList.remove('hidden');
@@ -1693,39 +1778,74 @@ async function handleSignal(sig){
     window._pendingInvite = sig;
     return;
   }
+
+  // 2. 相手から接続要求（Offer）が届いたとき
   if(sig.type==='offer'){
     if(sig.sessionId!==callSessionId && inCall) return;
     if(!inCall){
-      // treat as an ad-hoc invite fallback
+      // 着信ポップアップを表示して保留
       window._pendingOffer = sig;
       document.getElementById('incomingCard').classList.remove('hidden');
       document.getElementById('incomingName').textContent = sig.name || 'friend';
       document.getElementById('incomingSub').textContent = (sig.kind==='video'?'ビデオ':'音声')+'通話の着信';
       return;
     }
-    const entry = ensurePeerConnection(sig.from);
+    
+    // 通話中の場合はPeerConnectionを準備してAnswerを返す
+    const entry = ensurePeerConnection(fromPid);
     await entry.pc.setRemoteDescription(new RTCSessionDescription(sig.sdp));
-    flushCandidates(sig.from);
-    if(localStream) localStream.getTracks().forEach(tr=>{ if(!entry.pc.getSenders().find(s=>s.track===tr)) entry.pc.addTrack(tr, localStream); });
+    flushCandidates(fromPid);
+
+    // 自分の音声・映像トラックを追加（重複追加を防止しつつ追加）
+    if(localStream){
+      localStream.getTracks().forEach(tr => {
+        if(!entry.pc.getSenders().find(s => s.track === tr)){
+          entry.pc.addTrack(tr, localStream);
+        }
+      });
+    }
+
     const answer = await entry.pc.createAnswer();
     await entry.pc.setLocalDescription(answer);
-    await sendSignal('answer', sig.from, { sdp: entry.pc.localDescription });
-  } else if(sig.type==='answer'){
-    const entry = pcMap[sig.from];
-    if(entry){ await entry.pc.setRemoteDescription(new RTCSessionDescription(sig.sdp)); flushCandidates(sig.from); }
-  } else if(sig.type==='candidate'){
-    const entry = pcMap[sig.from];
-    if(entry && entry.pc.remoteDescription){ entry.pc.addIceCandidate(new RTCIceCandidate(sig.candidate)).catch(()=>{}); }
-    else { pendingCandidates[sig.from] = pendingCandidates[sig.from]||[]; pendingCandidates[sig.from].push(sig.candidate); }
-  } else if(sig.type==='hangup'){
-    removePeer(sig.from);
+    await sendSignal('answer', fromPid, { sdp: entry.pc.localDescription });
+    return;
+  }
+
+  // 3. 相手から接続許可（Answer）が届いたとき
+  if(sig.type==='answer'){
+    const entry = pcMap[fromPid];
+    if(entry){
+      await entry.pc.setRemoteDescription(new RTCSessionDescription(sig.sdp));
+      flushCandidates(fromPid);
+    }
+    return;
+  }
+
+  // 4. 通信経路（ICE Candidate）が届いたとき
+  if(sig.type==='candidate'){
+    const entry = pcMap[fromPid];
+    if(entry && entry.pc.remoteDescription){
+      entry.pc.addIceCandidate(new RTCIceCandidate(sig.candidate)).catch(()=>{});
+    } else {
+      pendingCandidates[fromPid] = pendingCandidates[fromPid] || [];
+      pendingCandidates[fromPid].push(sig.candidate);
+    }
+    return;
+  }
+
+  // 5. 相手が退室・切断したとき
+  if(sig.type==='hangup'){
+    if(typeof removePeer === 'function') removePeer(fromPid);
+    return;
   }
 }
+
 function flushCandidates(peerId){
   const entry = pcMap[peerId]; if(!entry) return;
   (pendingCandidates[peerId]||[]).forEach(c=> entry.pc.addIceCandidate(new RTCIceCandidate(c)).catch(()=>{}));
   pendingCandidates[peerId] = [];
 }
+
 document.getElementById('incomingAcceptBtn').addEventListener('click', async ()=>{
   document.getElementById('incomingCard').classList.add('hidden');
   const sig = window._pendingOffer || window._pendingInvite;
@@ -1739,6 +1859,7 @@ document.getElementById('incomingAcceptBtn').addEventListener('click', async ()=
   }
   window._pendingOffer = null; window._pendingInvite = null;
 });
+
 document.getElementById('incomingDeclineBtn').addEventListener('click', ()=>{
   document.getElementById('incomingCard').classList.add('hidden');
   const sig = window._pendingOffer || window._pendingInvite;
@@ -1749,7 +1870,11 @@ document.getElementById('incomingDeclineBtn').addEventListener('click', ()=>{
 function renderCallTiles(){
   const wrap = document.getElementById('callTiles');
   wrap.innerHTML = '';
-  const localTile = document.createElement('div'); localTile.className='tile';
+  
+  // 自分のタイル
+  const localTile = document.createElement('div'); 
+  localTile.className = 'tile call-tile';
+  localTile.setAttribute('data-pid', myId);
   if(callKind==='video' && localStream){
     const v = document.createElement('video'); v.autoplay=true; v.muted=true; v.playsInline=true; v.srcObject = localStream;
     localTile.appendChild(v);
@@ -1760,6 +1885,29 @@ function renderCallTiles(){
   localTile.appendChild(ln);
   wrap.appendChild(localTile);
 
+  // 相手のタイル群
+  const peerIds = Object.keys(pcMap);
+  if(peerIds.length===0){
+    const w = document.createElement('div'); w.className='tile waiting';
+    w.textContent = '先に部屋を開いています。友だちが来るのを待っています…';
+    wrap.appendChild(w);
+  }
+  peerIds.forEach(pid=>{
+    const entry = pcMap[pid];
+    const tile = document.createElement('div'); 
+    tile.className = 'tile call-tile';
+    tile.setAttribute('data-pid', pid);
+    if(callKind==='video'){
+      const v = document.createElement('video'); v.autoplay=true; v.playsInline=true; v.srcObject = entry.remoteStream;
+      tile.appendChild(v);
+    } else {
+      tile.innerHTML = avatarHtml('friend',null,null,64).replace('class="avatar"','class="avatar tile-avatar"');
+    }
+    const nm = document.createElement('div'); nm.className='tile-name'; nm.textContent = '通話相手';
+    tile.appendChild(nm);
+    wrap.appendChild(tile);
+  });
+}
   const peerIds = Object.keys(pcMap);
   if(peerIds.length===0){
     const w = document.createElement('div'); w.className='tile waiting';
