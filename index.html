@@ -1,0 +1,1904 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<title>KUIYA CHAT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sky-top:#eaf7ff; --sky-mid:#cdeeff; --sky-low:#b7e6f5;
+  --aqua:#4fd1e8; --aqua-deep:#12a8c9; --aqua-ink:#0d6b82;
+  --leaf:#8de08a; --leaf-deep:#4bc46a;
+  --sun:#ffd35c; --coral:#ff8a7a;
+  --glass:rgba(255,255,255,0.6); --glass-strong:rgba(255,255,255,0.82);
+  --ink:#0d3b4a; --ink-dim:#4d7f8f; --ink-faint:#7fa8b6;
+  --danger:#ff5f6d; --ok:#33c481;
+  --r-lg:26px; --r-md:16px; --r-pill:999px;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  margin:0; min-height:100vh; overflow:hidden;
+  font-family:'Nunito',-apple-system,sans-serif; color:var(--ink);
+  background:
+    radial-gradient(38% 30% at 12% -6%, #ffffffcc, transparent 60%),
+    radial-gradient(46% 40% at 100% 0%, #ffffffaa, transparent 65%),
+    radial-gradient(60% 50% at 85% 90%, rgba(141,224,138,0.35), transparent 60%),
+    linear-gradient(180deg, var(--sky-top), var(--sky-mid) 55%, var(--sky-low));
+}
+h1,h2,h3,.display{font-family:'Baloo 2',sans-serif; font-weight:700;}
+button{font-family:inherit; -webkit-user-select:none; user-select:none;}
+input,textarea{font-family:inherit;}
+::selection{background:rgba(79,209,232,0.4);}
+.hidden{display:none !important;}
+
+/* -------- decorative bg blobs -------- */
+.bg-orb{position:fixed; border-radius:50%; filter:blur(2px); opacity:0.55; z-index:0; pointer-events:none;}
+.bg-orb.o1{width:220px;height:220px; top:-60px; left:-60px; background:radial-gradient(circle at 30% 30%, #ffffff, var(--aqua) 70%);}
+.bg-orb.o2{width:160px;height:160px; bottom:-50px; right:-40px; background:radial-gradient(circle at 30% 30%, #ffffff, var(--leaf) 70%); opacity:0.4;}
+
+/* -------- glass panel base -------- */
+.glass{
+  background:linear-gradient(180deg, var(--glass-strong), var(--glass));
+  backdrop-filter:blur(18px) saturate(160%); -webkit-backdrop-filter:blur(18px) saturate(160%);
+  border:1px solid rgba(255,255,255,0.75);
+  box-shadow:0 10px 34px rgba(18,120,150,0.16), inset 0 1px 0 rgba(255,255,255,0.9);
+  border-radius:var(--r-lg);
+}
+
+/* -------- buttons -------- */
+.btn{border:none; cursor:pointer; border-radius:var(--r-pill); font-weight:700; position:relative; overflow:hidden; transition:transform .12s;}
+.btn:active{transform:scale(0.96);}
+.btn-glossy{
+  background:linear-gradient(180deg, #8fe9f4, var(--aqua-deep));
+  color:#04333d; padding:13px 24px; font-size:0.98rem;
+  box-shadow:0 8px 18px rgba(18,168,201,0.45), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+.btn-glossy::before{
+  content:""; position:absolute; top:2px; left:10%; right:10%; height:42%;
+  background:linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0));
+  border-radius:999px; pointer-events:none;
+}
+.btn-glossy:disabled{opacity:0.45; cursor:not-allowed;}
+.btn-ghost{background:rgba(255,255,255,0.5); color:var(--ink); padding:12px 22px; font-size:0.94rem; border:1px solid rgba(255,255,255,0.8);}
+.btn-danger{background:linear-gradient(180deg, #ff9a91, var(--danger)); color:#3a0509; padding:12px 22px; box-shadow:0 8px 18px rgba(255,95,109,0.4), inset 0 1px 0 rgba(255,255,255,0.8);}
+.icon-btn{
+  width:42px; height:42px; border-radius:50%; border:none; cursor:pointer;
+  background:linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.6));
+  box-shadow:0 4px 12px rgba(18,120,150,0.22), inset 0 1px 0 #fff;
+  display:flex; align-items:center; justify-content:center; color:var(--aqua-ink); flex:none;
+}
+.icon-btn svg{width:19px; height:19px;}
+.icon-btn.active{background:linear-gradient(180deg,#fff2c2,var(--sun)); color:#5c4200;}
+.icon-btn.danger{background:linear-gradient(180deg,#ffb3ab,var(--danger)); color:#3a0509;}
+.icon-btn.is-muted{background:linear-gradient(180deg,#ff8f8f,#ff4f5f) !important; color:#3a0509 !important; box-shadow:0 6px 16px rgba(255,79,95,.38), inset 0 1px 0 rgba(255,255,255,.8) !important;}
+.icon-btn.sm{width:34px;height:34px;} .icon-btn.sm svg{width:15px;height:15px;}
+
+/* ================= layout wraps ================= */
+.screen{position:fixed; inset:0; z-index:1; display:flex; flex-direction:column; overflow:hidden;}
+
+/* -------- entry (join) screen -------- */
+#entryScreen{align-items:center; justify-content:center; padding:20px; overflow-y:auto;}
+.entry-card{width:100%; max-width:440px; padding:30px 26px; margin:16px 0; position:relative;}
+.brand{display:flex; align-items:center; gap:12px; margin-bottom:4px;}
+.brand .drop{width:38px;height:38px;}
+.brand h1{margin:0; font-size:1.5rem; color:var(--aqua-ink); letter-spacing:0.02em;}
+.brand-sub{margin:2px 0 22px; color:var(--ink-dim); font-size:0.88rem; line-height:1.6;}
+.tabs{display:flex; gap:6px; margin-bottom:18px; background:rgba(255,255,255,0.5); border-radius:var(--r-pill); padding:4px;}
+.tab{flex:1; text-align:center; padding:9px; border-radius:var(--r-pill); font-weight:700; font-size:0.85rem; cursor:pointer; color:var(--ink-dim);}
+.tab.active{background:linear-gradient(180deg,#8fe9f4,var(--aqua-deep)); color:#04333d; box-shadow:0 4px 10px rgba(18,168,201,0.4);}
+.field{margin-bottom:15px;}
+.field label{display:block; font-size:0.76rem; color:var(--ink-dim); margin-bottom:6px; font-weight:700;}
+.field input{
+  width:100%; background:rgba(255,255,255,0.65); border:1px solid rgba(255,255,255,0.9);
+  border-radius:var(--r-md); padding:12px 14px; color:var(--ink); font-size:0.98rem; outline:none;
+}
+.field input:focus{border-color:var(--aqua-deep); background:rgba(255,255,255,0.85);}
+.field .hint{font-size:0.73rem; color:var(--ink-faint); margin-top:5px;}
+.profile-row{display:flex; align-items:center; gap:14px; margin-bottom:20px; background:rgba(255,255,255,0.4); border-radius:var(--r-md); padding:12px;}
+.avatar{border-radius:50%; overflow:hidden; flex:none; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#bdeff7,var(--aqua)); color:#04333d; font-family:'Baloo 2'; position:relative;}
+.avatar img{width:100%;height:100%;object-fit:cover;}
+.avatar-edit-btn{margin-left:auto;}
+.saved-rooms{margin-top:4px;}
+.saved-rooms h3{font-size:0.85rem; margin:0 0 10px; color:var(--ink-dim);}
+.room-chip{
+  display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:var(--r-md);
+  background:rgba(255,255,255,0.5); margin-bottom:8px; cursor:pointer; border:1px solid transparent;
+}
+.room-chip:hover{border-color:var(--aqua-deep);}
+.room-chip .rc-badge{width:34px;height:34px;border-radius:50%; background:linear-gradient(135deg,#c9f3d0,var(--leaf)); display:flex;align-items:center;justify-content:center; font-family:'Baloo 2'; flex:none; color:#0d3b1f;}
+.room-chip .rc-name{font-weight:700; font-size:0.92rem;}
+.room-chip .rc-key{font-size:0.72rem; color:var(--ink-faint);}
+.room-chip .rc-del{margin-left:auto; background:none; border:none; color:var(--ink-faint); cursor:pointer; padding:4px;}
+.empty-rooms{color:var(--ink-faint); font-size:0.82rem; text-align:center; padding:14px;}
+
+/* -------- chat screen -------- */
+#chatScreen{max-width:760px; width:100%; margin:0 auto; height:100vh;}
+header.bar{
+  display:flex; align-items:center; gap:10px; padding:12px 14px;
+  background:rgba(255,255,255,0.55); backdrop-filter:blur(14px);
+  border-bottom:1px solid rgba(255,255,255,0.7); position:relative; z-index:6;
+}
+header.bar .titles{flex:1; min-width:0;}
+header.bar h2{margin:0; font-size:1.02rem; color:var(--aqua-ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:6px; cursor:pointer;}
+header.bar h2 svg{width:13px;height:13px; opacity:0.6; flex:none;}
+.presence-line{font-size:0.74rem; color:var(--ink-dim); display:flex; align-items:center; gap:5px; margin-top:1px;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ok);}
+.hdr-btns{display:flex; gap:6px;}
+
+main.thread{
+  flex:1; overflow-y:auto; padding:14px 12px 6px; position:relative; z-index:2;
+  scroll-behavior:smooth; background-size:cover; background-position:center;
+}
+.thread-bgshade{position:absolute; inset:0; background:linear-gradient(180deg, rgba(234,247,255,0.35), rgba(205,238,255,0.5)); pointer-events:none; z-index:-1;}
+.empty-state{margin:auto; text-align:center; color:var(--ink-faint); font-size:0.88rem; max-width:260px; line-height:1.8; padding-top:30%;}
+
+.msg-row{display:flex; gap:8px; margin-bottom:14px; max-width:88%;}
+.msg-row.me{margin-left:auto; flex-direction:row-reverse;}
+.msg-row .av{width:32px;height:32px; border-radius:50%; flex:none; margin-top:2px;}
+.msg-col{display:flex; flex-direction:column; min-width:0;}
+.msg-row.me .msg-col{align-items:flex-end;}
+.msg-head{display:flex; align-items:baseline; gap:6px; margin-bottom:3px; padding:0 4px;}
+.msg-name{font-size:0.76rem; font-weight:800; color:var(--aqua-ink);}
+.msg-time{font-size:0.68rem; color:var(--ink-faint);}
+.bubble-wrap{display:flex; align-items:flex-end; gap:6px;}
+.msg-row.me .bubble-wrap{flex-direction:row-reverse;}
+.bubble{
+  padding:10px 14px; border-radius:18px; font-size:0.93rem; line-height:1.55; word-break:break-word; white-space:pre-wrap;
+  box-shadow:0 3px 10px rgba(18,120,150,0.1);
+}
+.msg-row.them .bubble{background:rgba(255,255,255,0.8); border:1px solid rgba(255,255,255,0.9); border-bottom-left-radius:5px;}
+.msg-row.me .bubble{background:linear-gradient(135deg, #bdeff7, var(--aqua)); border:1px solid rgba(255,255,255,0.7); border-bottom-right-radius:5px; color:#04333d;}
+.bubble.deleted{opacity:0.55; font-style:italic;}
+.bubble img.msg-media{max-width:220px; border-radius:12px; display:block; cursor:pointer;}
+.bubble video.msg-media{max-width:240px; border-radius:12px; display:block;}
+.bubble audio.msg-media{width:220px;}
+.bubble .sticker-img{width:120px; height:120px; object-fit:contain; display:block;}
+.bubble .gif-img{max-width:200px; border-radius:12px; display:block;}
+.msg-edited{font-size:0.66rem; color:var(--ink-faint); margin-left:5px;}
+.msg-menu-btn{width:28px;height:28px; border-radius:50%; border:1px solid rgba(255,255,255,0.9); background:rgba(255,255,255,0.72); color:var(--ink-dim); cursor:pointer; display:flex;align-items:center;justify-content:center; flex:none; font-weight:900; font-size:17px; line-height:1; box-shadow:0 2px 8px rgba(18,120,150,0.12);}
+.msg-menu-btn:hover,.msg-menu-btn:focus{background:#fff; color:var(--aqua-ink); outline:none;}
+.msg-action-menu{position:fixed; z-index:95; min-width:154px; padding:6px; border-radius:14px; background:rgba(255,255,255,0.96); border:1px solid rgba(255,255,255,0.95); box-shadow:0 12px 32px rgba(18,120,150,0.2); backdrop-filter:blur(14px);}
+.msg-action-menu button{display:flex; width:100%; align-items:center; gap:8px; padding:9px 10px; border:none; background:transparent; border-radius:10px; color:var(--ink); font:700 0.85rem inherit; cursor:pointer; text-align:left;}
+.msg-action-menu button:hover{background:rgba(79,209,232,0.16);}
+.msg-action-menu button.danger{color:#b61f2d;}
+.emoji-popover{max-width:430px; padding:8px; max-height:420px;}
+.emoji-popover emoji-picker{display:block; width:100%; --background:#ffffffd9; --border-color:transparent; --border-size:0px; --border-radius:16px; --num-columns:8; --category-font-color:var(--ink-dim); --button-hover-background:rgba(79,209,232,0.15); --button-active-background:rgba(79,209,232,0.24);}
+.mute-icon svg{display:block;}
+#muteBtn.is-muted{background:linear-gradient(180deg,#ff8a7a,#e94855); color:#4f0810; box-shadow:0 6px 14px rgba(255,95,109,0.34), inset 0 1px 0 rgba(255,255,255,0.8);}
+#muteBtn.is-muted .mute-icon::after{content:""; position:absolute; width:22px; height:2.5px; background:currentColor; border-radius:2px; transform:rotate(-42deg);}
+#muteBtn .mute-icon{position:relative; display:flex; align-items:center; justify-content:center;}
+#muteBtn.is-muted{position:relative;}
+.reactions{display:flex; gap:4px; flex-wrap:wrap; margin-top:4px; padding:0 4px;}
+.reaction-chip{display:flex; align-items:center; gap:3px; background:rgba(255,255,255,0.75); border:1px solid rgba(255,255,255,0.9); border-radius:var(--r-pill); padding:2px 8px; font-size:0.76rem; cursor:pointer;}
+.reaction-chip.mine{background:rgba(79,209,232,0.3); border-color:var(--aqua-deep);}
+.add-reaction{width:22px;height:22px; border-radius:50%; border:none; background:rgba(255,255,255,0.6); color:var(--ink-faint); cursor:pointer; font-size:0.8rem;}
+.read-tag{font-size:0.66rem; color:var(--ink-faint); margin-top:3px; padding:0 6px;}
+
+.typing-line{padding:2px 16px 6px; font-size:0.76rem; color:var(--ink-dim); min-height:20px;}
+
+/* -------- composer -------- */
+.composer-wrap{background:rgba(255,255,255,0.55); backdrop-filter:blur(14px); border-top:1px solid rgba(255,255,255,0.7); padding:8px 10px calc(8px + env(safe-area-inset-bottom)); z-index:6;}
+.attach-row{display:flex; gap:6px; overflow-x:auto; padding:2px 4px 8px;}
+form.composer{display:flex; align-items:center; gap:8px;}
+form.composer input[type=text]{
+  flex:1; background:rgba(255,255,255,0.75); border:1px solid rgba(255,255,255,0.9);
+  border-radius:var(--r-pill); padding:12px 18px; font-size:0.94rem; color:var(--ink); outline:none;
+}
+form.composer input[type=text]:focus{border-color:var(--aqua-deep);}
+.send-btn{width:44px;height:44px; border-radius:50%; flex:none; background:linear-gradient(180deg,#8fe9f4,var(--aqua-deep)); border:none; color:#04333d; box-shadow:0 6px 14px rgba(18,168,201,0.4), inset 0 1px 0 rgba(255,255,255,0.9); display:flex;align-items:center;justify-content:center; cursor:pointer;}
+.send-btn svg{width:18px;height:18px;}
+.rec-btn.recording{background:linear-gradient(180deg,#ffb3ab,var(--danger)); animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,95,109,0.5);}50%{box-shadow:0 0 0 8px rgba(255,95,109,0);}}
+
+/* -------- popovers: emoji / sticker / gif ---------*/
+.popover{position:absolute; bottom:64px; left:10px; right:10px; max-width:360px; z-index:20; padding:12px; max-height:280px; overflow-y:auto;}
+.popover h4{margin:0 0 8px; font-size:0.82rem; color:var(--ink-dim);}
+.emoji-grid{display:grid; grid-template-columns:repeat(8,1fr); gap:4px;}
+.emoji-grid button{background:none;border:none;font-size:1.3rem;padding:5px;border-radius:8px;cursor:pointer;}
+.emoji-grid button:hover{background:rgba(255,255,255,0.7);}
+.sticker-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px;}
+.sticker-grid img{width:100%; aspect-ratio:1; object-fit:contain; cursor:pointer; background:rgba(255,255,255,0.4); border-radius:10px; padding:4px;}
+.sticker-add{aspect-ratio:1; border:2px dashed rgba(18,168,201,0.4); border-radius:10px; display:flex;align-items:center;justify-content:center; color:var(--aqua-deep); cursor:pointer; font-size:1.6rem;}
+.gif-form{display:flex; gap:6px;}
+.gif-form input{flex:1; border-radius:var(--r-md); border:1px solid rgba(255,255,255,0.9); padding:9px 10px; background:rgba(255,255,255,0.7); outline:none;}
+
+/* -------- modals (generic) -------- */
+.modal-layer{position:fixed; inset:0; z-index:80; display:none; align-items:center; justify-content:center; background:rgba(13,59,74,0.35); backdrop-filter:blur(3px); padding:18px;}
+.modal-layer.show{display:flex;}
+.modal-card{width:100%; max-width:420px; padding:26px 24px; max-height:88vh; overflow-y:auto;}
+.modal-card h3{margin:0 0 4px; color:var(--aqua-ink);}
+.modal-card .msub{color:var(--ink-dim); font-size:0.82rem; margin:0 0 18px;}
+.modal-actions{display:flex; gap:10px; margin-top:18px;}
+.modal-actions .btn{flex:1;}
+.close-x{position:absolute; top:16px; right:16px; background:none; border:none; color:var(--ink-faint); cursor:pointer;}
+
+/* frame color/width picker */
+.frame-row{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+.swatches{display:flex; gap:8px; flex-wrap:wrap;}
+.swatch{width:26px;height:26px;border-radius:50%; cursor:pointer; border:2px solid rgba(255,255,255,0.9);}
+.swatch.sel{outline:2px solid var(--aqua-ink); outline-offset:2px;}
+input[type=range]{width:100%;}
+
+/* cropper */
+.cropper-overlay{position:fixed; inset:0; z-index:100; background:rgba(13,59,74,0.55); display:flex; align-items:center; justify-content:center; padding:16px;}
+.cropper-card{background:#fff; border-radius:22px; padding:22px; max-width:340px; width:100%; text-align:center;}
+.cropper-viewport{position:relative; margin:14px auto; overflow:hidden; background:#dff4fa; touch-action:none; cursor:grab;}
+.cropper-viewport.circle{border-radius:50%; width:220px; height:220px;}
+.cropper-viewport.rect{border-radius:16px; width:220px; height:300px;}
+.cropper-img{position:absolute; top:0; left:0; transform-origin:top left; user-select:none; -webkit-user-drag:none;}
+.cropper-actions{display:flex; gap:10px; margin-top:14px;}
+.cropper-actions .btn{flex:1;}
+
+/* -------- call overlay -------- */
+.call-overlay{position:fixed; inset:0; z-index:70; display:none; flex-direction:column; background:linear-gradient(180deg,#0d3b4a,#0a2b36);}
+.call-overlay.show{display:flex;}
+.call-top{display:flex; align-items:center; justify-content:space-between; padding:14px 16px; color:#eaf7ff;}
+.call-top .ctitle{font-family:'Baloo 2'; font-size:1rem;}
+.call-tiles{flex:1; display:flex; flex-wrap:wrap; align-content:center; justify-content:center; gap:10px; padding:10px; overflow-y:auto;}
+.tile{position:relative; width:min(44vw,220px); aspect-ratio:3/4; border-radius:18px; overflow:hidden; background:#123544; display:flex;align-items:center;justify-content:center;}
+.tile video{width:100%; height:100%; object-fit:cover;}
+.tile .tile-avatar{width:64px;height:64px;border-radius:50%;}
+.tile .tile-name{position:absolute; left:8px; bottom:8px; color:#fff; font-size:0.76rem; background:rgba(0,0,0,0.35); padding:3px 9px; border-radius:999px;}
+.tile.waiting{color:#bfe6ef; font-size:0.8rem; text-align:center; padding:14px;}
+.call-controls{display:flex; justify-content:center; gap:12px; padding:16px; flex-wrap:wrap;}
+.call-controls .icon-btn{width:52px;height:52px;}
+.call-controls .icon-btn svg{width:22px;height:22px;}
+
+.yt-panel{position:absolute; inset:8px 8px auto 8px; max-height:60%; z-index:5;}
+.yt-panel.hidden{display:none;}
+.yt-form{display:flex; gap:6px; padding:10px;}
+.yt-form input{flex:1; border-radius:var(--r-md); border:1px solid rgba(255,255,255,0.6); padding:8px 10px; background:rgba(255,255,255,0.15); color:#fff; outline:none;}
+.yt-form input::placeholder{color:rgba(255,255,255,0.6);}
+#ytFrameWrap{width:100%; aspect-ratio:16/9; background:#000; border-radius:14px; overflow:hidden;}
+
+/* incoming call toast */
+.incoming-card{position:fixed; top:16px; left:50%; transform:translateX(-50%); z-index:90; padding:14px 18px; display:flex; align-items:center; gap:12px; min-width:260px;}
+.incoming-card .av{width:40px;height:40px;}
+.incoming-card .ic-txt{flex:1;}
+.incoming-card .ic-name{font-weight:800; font-size:0.9rem;}
+.incoming-card .ic-sub{font-size:0.75rem; color:var(--ink-dim);}
+.incoming-card .ic-btns{display:flex; gap:6px;}
+
+/* shiritori */
+.shiritori-overlay{position:fixed; inset:0; z-index:75; display:none; flex-direction:column; background:linear-gradient(180deg,var(--sky-top),var(--sky-mid));}
+.shiritori-overlay.show{display:flex;}
+.shr-top{display:flex; align-items:center; justify-content:space-between; padding:14px 16px;}
+.shr-status{padding:0 16px 6px; font-size:0.85rem; color:var(--ink-dim);}
+.shr-history{display:flex; gap:10px; overflow-x:auto; padding:8px 16px;}
+.shr-history .hitem{flex:none; width:78px; text-align:center;}
+.shr-history .hitem img{width:78px;height:78px;object-fit:contain; background:rgba(255,255,255,0.6); border-radius:12px;}
+.shr-history .hitem .hy{font-size:0.72rem; color:var(--ink-dim); margin-top:3px;}
+.shr-canvas-wrap{flex:1; display:flex; align-items:center; justify-content:center; padding:10px;}
+#shrCanvas{background:#fff; border-radius:18px; touch-action:none; box-shadow:0 8px 24px rgba(18,120,150,0.2);}
+.shr-tools{display:flex; align-items:center; gap:10px; padding:10px 16px; flex-wrap:wrap;}
+.shr-colors{display:flex; gap:6px;}
+.shr-colors button{width:22px;height:22px;border-radius:50%; border:2px solid rgba(255,255,255,0.9); cursor:pointer;}
+.shr-submit{display:flex; gap:8px; padding:10px 16px calc(10px + env(safe-area-inset-bottom));}
+.shr-submit input{flex:1; border-radius:var(--r-md); border:1px solid rgba(255,255,255,0.9); padding:11px 12px; background:rgba(255,255,255,0.7); outline:none;}
+
+.toast{position:fixed; top:16px; left:50%; transform:translateX(-50%); z-index:95; padding:10px 18px; font-size:0.85rem; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s;}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(6px);}
+
+@media(max-width:480px){
+  .tile{width:44vw;}
+  .msg-row{max-width:92%;}
+}
+</style>
+<script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1.29.1/index.js"></script>
+</head>
+<body>
+
+<div class="bg-orb o1"></div>
+<div class="bg-orb o2"></div>
+
+<!-- ============ ENTRY SCREEN ============ -->
+<div class="screen" id="entryScreen">
+  <div class="glass entry-card">
+    <div class="brand">
+      <svg class="drop" viewBox="0 0 40 40"><defs><linearGradient id="dg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bdeff7"/><stop offset="1" stop-color="#12a8c9"/></linearGradient></defs><path d="M20 3C13 14 7 20 7 27a13 13 0 0 0 26 0C33 20 27 14 20 3Z" fill="url(#dg)" stroke="#fff" stroke-width="1.5"/><ellipse cx="16" cy="22" rx="3" ry="5" fill="#fff" opacity="0.6"/></svg>
+      <h1>KUIYA CHAT</h1>
+    </div>
+    <p class="brand-sub">この道50年の粘土職人が真心こめて作った、合言葉制のチャットルームサイト。</p>
+
+    <div class="profile-row">
+      <div class="avatar" id="entryAvatar" style="width:52px;height:52px; font-size:1.3rem;">?</div>
+      <div>
+        <div style="font-weight:800; font-size:0.92rem;" id="entryNameLabel">プロフィール未設定</div>
+        <div style="font-size:0.74rem; color:var(--ink-dim);">名前・アイコンを設定</div>
+      </div>
+      <button class="icon-btn avatar-edit-btn" id="openProfileBtn" title="プロフィール編集">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </button>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="new">合言葉で入る</div>
+      <div class="tab" data-tab="saved">マイルーム</div>
+    </div>
+
+    <div id="tabNew">
+      <div class="field">
+        <label for="roomInput">合言葉（部屋のキー）</label>
+        <input id="roomInput" type="text" maxlength="30" placeholder="例: いつメン2026" autocomplete="off">
+        <div class="hint">同じ合言葉を入れた人同士だけがつながります。自分ひとりで先に入って待つこともできます。</div>
+      </div>
+      <button class="btn btn-glossy" id="joinBtn" style="width:100%;">部屋に入る</button>
+    </div>
+
+    <div id="tabSaved" class="hidden">
+      <div class="saved-rooms" id="savedRoomsList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CHAT SCREEN ============ -->
+<div class="screen hidden" id="chatScreen">
+  <header class="bar">
+    <button class="icon-btn sm" id="backToEntryBtn" title="部屋一覧へ">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <div class="titles">
+      <h2 id="roomTitle">部屋<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></h2>
+      <div class="presence-line"><span class="dot"></span><span id="presenceText">つながっています</span></div>
+    </div>
+    <div class="hdr-btns">
+      <button class="icon-btn" id="callAudioBtn" title="音声通話"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5c0 8.8 6.2 15 15 15l1-3.4-4.6-1.6-1.4 1.6a12.4 12.4 0 0 1-6.6-6.6l1.6-1.4L7.4 4 4 5Z"/></svg></button>
+      <button class="icon-btn" id="callVideoBtn" title="ビデオ通話"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="12" height="12" rx="2.5"/><path d="M21 8.2v7.6l-6-3.1V11.3l6-3.1Z"/></svg></button>
+      <button class="icon-btn" id="gameBtn" title="絵しりとり"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><circle cx="12" cy="12" r="5"/></svg></button>
+      <button class="icon-btn" id="settingsBtn" title="ルーム設定"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.6a1.9 1.9 0 0 0 .4 2.1l.1.1a2.3 2.3 0 1 1-3.3 3.3l-.1-.1a1.9 1.9 0 0 0-2.1-.4 1.9 1.9 0 0 0-1.2 1.8v.2a2.3 2.3 0 0 1-4.6 0v-.1a1.9 1.9 0 0 0-1.2-1.8 1.9 1.9 0 0 0-2.1.4l-.1.1a2.3 2.3 0 1 1-3.3-3.3l.1-.1a1.9 1.9 0 0 0 .4-2.1 1.9 1.9 0 0 0-1.8-1.2h-.2a2.3 2.3 0 0 1 0-4.6h.1a1.9 1.9 0 0 0 1.8-1.2 1.9 1.9 0 0 0-.4-2.1l-.1-.1a2.3 2.3 0 1 1 3.3-3.3l.1.1a1.9 1.9 0 0 0 2.1.4h.1a1.9 1.9 0 0 0 1.2-1.8v-.2a2.3 2.3 0 0 1 4.6 0v.1a1.9 1.9 0 0 0 1.2 1.8h.1a1.9 1.9 0 0 0 2.1-.4l.1-.1a2.3 2.3 0 1 1 3.3 3.3l-.1.1a1.9 1.9 0 0 0-.4 2.1v.1a1.9 1.9 0 0 0 1.8 1.2h.2a2.3 2.3 0 0 1 0 4.6h-.1a1.9 1.9 0 0 0-1.8 1.2Z"/></svg></button>
+    </div>
+  </header>
+
+  <main class="thread" id="thread">
+    <div class="thread-bgshade"></div>
+    <div class="empty-state" id="emptyState">まだメッセージはありません。<br>最初のひとことを送ってみましょう。</div>
+  </main>
+
+  <div class="typing-line" id="typingLine"></div>
+
+  <div class="composer-wrap">
+    <div class="attach-row hidden" id="attachRow"></div>
+    <form class="composer" id="composerForm" autocomplete="off" style="position:relative;">
+      <button type="button" class="icon-btn sm" id="attachBtn" title="ファイル添付">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5 12.4 20a5 5 0 0 1-7-7l8-8a3.5 3.5 0 0 1 5 5l-8 8a2 2 0 0 1-3-3l7-7"/></svg>
+      </button>
+      <button type="button" class="icon-btn sm" id="emojiBtn" title="絵文字">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5s1.2 2 3.5 2 3.5-2 3.5-2"/><path d="M9 9h.01M15 9h.01"/></svg>
+      </button>
+      <button type="button" class="icon-btn sm" id="stickerBtn" title="スタンプ / GIF">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 13 2.2 2.6L14 11l4 6H6l2-4Z"/></svg>
+      </button>
+      <input id="msgInput" type="text" placeholder="メッセージを送る…" maxlength="1200">
+      <button type="button" class="icon-btn sm rec-btn" id="voiceBtn" title="ボイスメッセージ（最長10秒）">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+      </button>
+      <button type="submit" class="send-btn" title="送信">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l16-8-6 16-3-7-7-1Z"/></svg>
+      </button>
+
+      <div class="glass popover emoji-popover hidden" id="emojiPopover">
+        <h4>絵文字</h4>
+        <emoji-picker id="emojiPicker" locale="ja" emoji-version="17.0"></emoji-picker>
+      </div>
+      <div class="glass popover hidden" id="stickerPopover">
+        <h4>スタンプ</h4>
+        <div class="sticker-grid" id="stickerGrid"></div>
+        <h4 style="margin-top:12px;">GIF</h4>
+        <div class="gif-form">
+          <input type="text" id="gifUrlInput" placeholder="直接GIF画像のURL（.gif）">
+          <button type="button" class="btn btn-glossy" id="gifSendBtn" style="padding:9px 14px;">URL送信</button>
+        </div>
+        <button type="button" class="btn btn-ghost" id="gifFileBtn" style="width:100%; margin-top:7px; padding:9px 14px;">GIFファイルを選ぶ</button>
+      </div>
+    </form>
+  </div>
+
+  <input type="file" id="fileInputImage" accept="image/*" class="hidden">
+  <input type="file" id="fileInputVideo" accept="video/*" class="hidden">
+  <input type="file" id="fileInputAudio" accept="audio/*" class="hidden">
+  <input type="file" id="fileInputGif" accept="image/gif,.gif" class="hidden">
+</div>
+
+<!-- ============ profile modal ============ -->
+<div class="modal-layer" id="profileModal">
+  <div class="glass modal-card">
+    <button class="close-x" data-close="profileModal">✕</button>
+    <h3>プロフィール</h3>
+    <p class="msub">名前・アイコン・フレームを設定します</p>
+    <div class="profile-row" style="margin-bottom:18px;">
+      <div class="avatar" id="profileAvatarPreview" style="width:64px;height:64px; font-size:1.5rem;">?</div>
+      <button class="btn btn-ghost" id="avatarUploadBtn">画像を選ぶ</button>
+      <input type="file" id="avatarFileInput" accept="image/*" class="hidden">
+    </div>
+    <div class="field">
+      <label for="profileNameInput">呼び名</label>
+      <input id="profileNameInput" type="text" maxlength="16" placeholder="例: まこ">
+    </div>
+    <div class="field">
+      <label>アイコンのフレーム</label>
+      <div class="frame-row">
+        <div class="swatches" id="frameSwatches"></div>
+      </div>
+      <label style="margin-top:8px; display:block;">太さ: <span id="frameWidthLabel">2px</span></label>
+      <input type="range" id="frameWidthInput" min="0" max="6" value="2">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-glossy" id="saveProfileBtn" style="flex:1;">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ room settings modal ============ -->
+<div class="modal-layer" id="settingsModal">
+  <div class="glass modal-card">
+    <button class="close-x" data-close="settingsModal">✕</button>
+    <h3>ルーム設定</h3>
+    <div class="field">
+      <label for="roomNameInput">このルームの名前</label>
+      <input id="roomNameInput" type="text" maxlength="24" placeholder="例: 週末メンバー">
+    </div>
+    <div class="field">
+      <label>背景画像</label>
+      <button class="btn btn-ghost" id="bgUploadBtn" style="width:100%;">背景を選んで調整する</button>
+      <input type="file" id="bgFileInput" accept="image/*" class="hidden">
+      <div class="hint">アップロード後、拡大・移動して枠に合わせられます。</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="bgClearBtn" style="flex:1;">背景を解除</button>
+      <button class="btn btn-glossy" id="saveRoomSettingsBtn" style="flex:1;">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ incoming call ============ -->
+<div class="glass incoming-card hidden" id="incomingCard">
+  <div class="avatar av" id="incomingAvatar">?</div>
+  <div class="ic-txt">
+    <div class="ic-name" id="incomingName">—</div>
+    <div class="ic-sub" id="incomingSub">通話に招待されています</div>
+  </div>
+  <div class="ic-btns">
+    <button class="icon-btn" id="incomingDeclineBtn" style="background:linear-gradient(180deg,#ffb3ab,var(--danger)); color:#3a0509;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5c0 8.8 6.2 15 15 15l1-3.4-4.6-1.6-1.4 1.6a12.4 12.4 0 0 1-6.6-6.6l1.6-1.4L7.4 4 4 5Z"/><path d="M3 3l18 18"/></svg></button>
+    <button class="icon-btn" id="incomingAcceptBtn" style="background:linear-gradient(180deg,#c9f3d0,var(--leaf)); color:#0d3b1f;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5c0 8.8 6.2 15 15 15l1-3.4-4.6-1.6-1.4 1.6a12.4 12.4 0 0 1-6.6-6.6l1.6-1.4L7.4 4 4 5Z"/></svg></button>
+  </div>
+</div>
+
+<!-- ============ call overlay ============ -->
+<div class="call-overlay" id="callOverlay">
+  <div class="call-top">
+    <div class="ctitle" id="callTitle">通話中</div>
+    <button class="icon-btn sm" id="ytPartyToggleBtn" title="YouTube Party" style="background:rgba(255,255,255,0.2); color:#fff;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="m10 9 5 3-5 3V9Z"/></svg>
+    </button>
+  </div>
+
+  <div class="glass yt-panel hidden" id="ytPanel">
+    <div class="yt-form">
+      <input type="text" id="ytUrlInput" placeholder="YouTubeのURLまたはID">
+      <button class="btn btn-glossy" id="ytLoadBtn" style="padding:8px 14px;">読込</button>
+    </div>
+    <div id="ytFrameWrap"></div>
+    <div style="display:flex; gap:8px; justify-content:center; padding:8px;">
+      <button class="icon-btn sm" id="ytPlayBtn" style="background:rgba(255,255,255,0.25); color:#fff;"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7Z"/></svg></button>
+      <button class="icon-btn sm" id="ytPauseBtn" style="background:rgba(255,255,255,0.25); color:#fff;"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg></button>
+    </div>
+  </div>
+
+  <div class="call-tiles" id="callTiles"></div>
+
+  <div class="call-controls">
+    <button class="icon-btn" id="muteBtn" title="ミュート"><span class="mute-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"/><path d="M6 11a6 6 0 0 0 12 0M12 17v3"/></svg></span></button>
+    <button class="icon-btn" id="shareBtn" title="画面共有"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></button>
+    <button class="icon-btn danger" id="leaveCallBtn" title="退出"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5c0 8.8 6.2 15 15 15l1-3.4-4.6-1.6-1.4 1.6a12.4 12.4 0 0 1-6.6-6.6l1.6-1.4L7.4 4 4 5Z"/><path d="M3 3l18 18"/></svg></button>
+  </div>
+</div>
+
+<!-- ============ shiritori overlay ============ -->
+<div class="shiritori-overlay" id="shiritoriOverlay">
+  <div class="shr-top">
+    <h3 style="margin:0;">絵しりとり</h3>
+    <button class="icon-btn sm" id="shrCloseBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="shr-status" id="shrStatus">読み込み中…</div>
+  <div class="shr-history" id="shrHistory"></div>
+  <div class="shr-canvas-wrap"><canvas id="shrCanvas" width="300" height="300"></canvas></div>
+  <div class="shr-tools">
+    <div class="shr-colors" id="shrColors"></div>
+    <input type="range" id="shrWidth" min="2" max="14" value="5" style="width:90px;">
+    <button class="btn btn-ghost" id="shrClearBtn" style="padding:8px 14px;">消す</button>
+    <button class="btn btn-ghost" id="shrRestartBtn" style="padding:8px 14px;">最初から</button>
+  </div>
+  <form class="shr-submit" id="shrSubmitForm">
+    <input type="text" id="shrYomiInput" placeholder="この絵の読み方（ひらがな）" maxlength="20">
+    <button type="submit" class="btn btn-glossy">送る</button>
+  </form>
+</div>
+
+<div class="toast glass" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+/* ======================================================================
+   KUIYA CHAT — utilities
+   ====================================================================== */
+const myId = crypto.randomUUID();
+let myProfile = { name:"", avatar:null, frame:{color:"#12a8c9", width:2} };
+let room = "";
+let roomLabel = "";
+
+const mediaCache = new Map();
+const mediaObjectUrls = new Map();
+let hasLoadedOnce = false;
+let lastReadSentAt = 0;
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._h); toast._h = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function initialOf(n){ return (n||"?").trim().charAt(0).toUpperCase() || "?"; }
+function safeKey(str){
+  return (str||"").trim().toLowerCase().replace(/[\/\\'"\s]+/g,"-").slice(0,40) || "general";
+}
+function fmtClock(ts){
+  const d = new Date(ts);
+  return String(d.getHours()).padStart(2,'0')+":"+String(d.getMinutes()).padStart(2,'0')+":"+String(d.getSeconds()).padStart(2,'0');
+}
+function nowTs(){ return Date.now(); }
+function avatarHtml(name, avatarUrl, frame, size){
+  size = size||32;
+  const fw = frame && frame.width ? Math.min(frame.width,6) : 0;
+  const fc = frame && frame.color ? frame.color : "transparent";
+  const style = `width:${size}px;height:${size}px;border:${fw}px solid ${fc};`;
+  if(avatarUrl){
+    return `<div class="avatar" style="${style}"><img src="${avatarUrl}" alt=""></div>`;
+  }
+  return `<div class="avatar" style="${style} font-size:${size*0.4}px;">${escapeHtml(initialOf(name))}</div>`;
+}
+
+/* ======================================================================
+   storage helpers
+   ====================================================================== */
+/* Storage adapter
+   - Claude/preview environments: keep using window.storage when available.
+   - GitHub Pages/normal browsers: fall back to localStorage.
+   - Large media payloads use IndexedDB so images/video/audio do not hit
+     the tiny localStorage quota.
+   Note: without a remote backend, the GitHub Pages fallback is local to
+   this browser, not cross-device.
+*/
+const LOCAL_PREFIX = "kuiya:";
+let mediaDbPromise = null;
+
+function openMediaDb(){
+  if(mediaDbPromise) return mediaDbPromise;
+  mediaDbPromise = new Promise((resolve,reject)=>{
+    if(!window.indexedDB){ resolve(null); return; }
+    const req = indexedDB.open("kuiya-chat-media", 1);
+    req.onupgradeneeded = ()=>{
+      const db = req.result;
+      if(!db.objectStoreNames.contains("media")) db.createObjectStore("media");
+    };
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror = ()=>reject(req.error);
+  }).catch(err=>{
+    console.warn("IndexedDB unavailable", err);
+    return null;
+  });
+  return mediaDbPromise;
+}
+
+async function mediaGet(key){
+  const db = await openMediaDb();
+  if(!db) return null;
+  return new Promise(resolve=>{
+    try{
+      const tx = db.transaction("media","readonly");
+      const req = tx.objectStore("media").get(key);
+      req.onsuccess = ()=>resolve(req.result ?? null);
+      req.onerror = ()=>resolve(null);
+    }catch(e){ resolve(null); }
+  });
+}
+
+async function mediaSet(key, value){
+  const db = await openMediaDb();
+  if(!db) return false;
+  return new Promise(resolve=>{
+    try{
+      const tx = db.transaction("media","readwrite");
+      tx.objectStore("media").put(value, key);
+      tx.oncomplete = ()=>resolve(true);
+      tx.onerror = ()=>resolve(false);
+      tx.onabort = ()=>resolve(false);
+    }catch(e){ resolve(false); }
+  });
+}
+
+function localGet(key){
+  try{
+    const raw = localStorage.getItem(LOCAL_PREFIX + key);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){
+    console.warn("localStorage get failed", key, e);
+    return null;
+  }
+}
+
+function localSet(key, value){
+  try{
+    localStorage.setItem(LOCAL_PREFIX + key, JSON.stringify(value));
+    return true;
+  }catch(e){
+    console.error("localStorage set failed", key, e);
+    return false;
+  }
+}
+
+async function getJSON(key, shared, fallback){
+  try{
+    if(typeof window.storage?.get === "function"){
+      const r = await window.storage.get(key, shared);
+      if(r && r.value !== undefined) return JSON.parse(r.value);
+    }
+  }catch(e){
+    console.warn("window.storage get failed; using browser storage", key, e);
+  }
+
+  if(String(key).startsWith("media:")){
+    const value = await mediaGet(key);
+    return value === null || value === undefined ? fallback : value;
+  }
+
+  const value = localGet((shared ? "shared:" : "private:") + key);
+  return value === null || value === undefined ? fallback : value;
+}
+
+async function setJSON(key, shared, value){
+  try{
+    if(typeof window.storage?.set === "function"){
+      await window.storage.set(key, JSON.stringify(value), shared);
+      return true;
+    }
+  }catch(e){
+    console.warn("window.storage set failed; using browser storage", key, e);
+  }
+
+  if(String(key).startsWith("media:")){
+    return await mediaSet(key, value);
+  }
+
+  return localSet((shared ? "shared:" : "private:") + key, value);
+}
+
+const K_STATE = ()=>`chat:${room}:state`;
+const K_TYPING = ()=>`chat:${room}:typing`;
+const K_CALL = ()=>`chat:${room}:call`;
+const K_SIGNAL = ()=>`chat:${room}:signal`;
+const K_YT = ()=>`chat:${room}:ytparty`;
+const K_SHIRI = ()=>`chat:${room}:shiritori`;
+const K_MEDIA = (id)=>`media:${room}:${id}`;
+
+async function readState(){ return await getJSON(K_STATE(), true, {messages:[], presence:{}, reads:{}, roomName:"", bg:null}); }
+async function writeState(s){ return await setJSON(K_STATE(), true, s); }
+
+/* ======================================================================
+   image utilities (resize / cropper)
+   ====================================================================== */
+function fileToImage(file){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onload = ()=>{ const img = new Image(); img.onload=()=>resolve(img); img.onerror=reject; img.src = reader.result; };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+async function resizeImageFile(file, maxDim, quality){
+  const img = await fileToImage(file);
+  let w = img.naturalWidth, h = img.naturalHeight;
+  const scale = Math.min(1, maxDim / Math.max(w,h));
+  w = Math.round(w*scale); h = Math.round(h*scale);
+  const canvas = document.createElement('canvas'); canvas.width=w; canvas.height=h;
+  canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+  const type = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+  return canvas.toDataURL(type, quality||0.85);
+}
+function openCropper(file, shape, outW, outH){
+  return new Promise((resolve)=>{
+    const overlay = document.createElement('div');
+    overlay.className = 'cropper-overlay';
+    overlay.innerHTML = `
+      <div class="cropper-card">
+        <h3 style="margin:0 0 4px; color:var(--aqua-ink);">${shape==='circle'?'アイコンを調整':'背景を調整'}</h3>
+        <p style="margin:0; font-size:0.78rem; color:var(--ink-dim);">ドラッグで位置、スライダーで拡大縮小</p>
+        <div class="cropper-viewport ${shape}"><img class="cropper-img" draggable="false"></div>
+        <input type="range" class="cropper-zoom" min="100" max="320" value="100">
+        <div class="cropper-actions">
+          <button class="btn btn-ghost" data-act="cancel">キャンセル</button>
+          <button class="btn btn-glossy" data-act="ok">これにする</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const img = overlay.querySelector('.cropper-img');
+    const viewport = overlay.querySelector('.cropper-viewport');
+    const zoomEl = overlay.querySelector('.cropper-zoom');
+    const reader = new FileReader();
+    reader.onload = ()=>{ img.src = reader.result; };
+    reader.readAsDataURL(file);
+
+    let vw=0, vh=0, natW=0, natH=0, coverScale=1, scale=1, tx=0, ty=0;
+    let dragging=false, sx=0, sy=0, otx=0, oty=0;
+
+    img.onload = ()=>{
+      const rect = viewport.getBoundingClientRect();
+      vw = rect.width; vh = rect.height;
+      natW = img.naturalWidth; natH = img.naturalHeight;
+      coverScale = Math.max(vw/natW, vh/natH);
+      scale = coverScale;
+      tx = (vw - natW*scale)/2; ty = (vh - natH*scale)/2;
+      apply();
+    };
+    function apply(){
+      img.style.width = natW+'px'; img.style.height = natH+'px';
+      img.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+    }
+    function clamp(){
+      const w = natW*scale, h = natH*scale;
+      tx = Math.min(0, Math.max(vw-w, tx));
+      ty = Math.min(0, Math.max(vh-h, ty));
+    }
+    viewport.addEventListener('pointerdown', e=>{ dragging=true; sx=e.clientX; sy=e.clientY; otx=tx; oty=ty; viewport.setPointerCapture(e.pointerId); });
+    viewport.addEventListener('pointermove', e=>{ if(!dragging) return; tx=otx+(e.clientX-sx); ty=oty+(e.clientY-sy); clamp(); apply(); });
+    viewport.addEventListener('pointerup', ()=> dragging=false);
+    viewport.addEventListener('pointercancel', ()=> dragging=false);
+    zoomEl.addEventListener('input', ()=>{
+      const factor = zoomEl.value/100;
+      const newScale = coverScale*factor;
+      const cx=vw/2, cy=vh/2;
+      const relX=(cx-tx)/scale, relY=(cy-ty)/scale;
+      scale = newScale;
+      tx = cx - relX*scale; ty = cy - relY*scale;
+      clamp(); apply();
+    });
+    overlay.addEventListener('click', e=>{
+      const act = e.target.closest('button') && e.target.closest('button').dataset.act;
+      if(act==='cancel'){ overlay.remove(); resolve(null); }
+      if(act==='ok'){
+        const canvas = document.createElement('canvas'); canvas.width=outW; canvas.height=outH;
+        const ctx = canvas.getContext('2d');
+        const ratio = outW/vw;
+        ctx.drawImage(img, tx*ratio, ty*ratio, natW*scale*ratio, natH*scale*ratio);
+        const dataURL = canvas.toDataURL(file.type==='image/png'?'image/png':'image/jpeg', 0.86);
+        overlay.remove(); resolve(dataURL);
+      }
+    });
+  });
+}
+
+/* ======================================================================
+   profile (personal storage)
+   ====================================================================== */
+async function loadProfile(){
+  const p = await getJSON('profile', false, null);
+  if(p) myProfile = p;
+  renderProfileUI();
+}
+async function saveProfile(){
+  await setJSON('profile', false, myProfile);
+  renderProfileUI();
+}
+function renderProfileUI(){
+  document.getElementById('entryAvatar').outerHTML = avatarHtml(myProfile.name, myProfile.avatar, myProfile.frame, 52).replace('class="avatar"','class="avatar" id="entryAvatar"');
+  document.getElementById('entryNameLabel').textContent = myProfile.name ? myProfile.name : "プロフィール未設定";
+}
+document.getElementById('openProfileBtn').addEventListener('click', ()=>{
+  document.getElementById('profileNameInput').value = myProfile.name || "";
+  document.getElementById('profileAvatarPreview').outerHTML = avatarHtml(myProfile.name, myProfile.avatar, myProfile.frame, 64).replace('class="avatar"','class="avatar" id="profileAvatarPreview"');
+  buildFrameSwatches();
+  document.getElementById('frameWidthInput').value = myProfile.frame.width;
+  document.getElementById('frameWidthLabel').textContent = myProfile.frame.width+'px';
+  openModal('profileModal');
+});
+const FRAME_COLORS = ["#12a8c9","#4bc46a","#ffb648","#ff6f6f","#8a6fff","#ff6fb0","#2b2b2b","#ffffff"];
+function buildFrameSwatches(){
+  const wrap = document.getElementById('frameSwatches');
+  wrap.innerHTML = '';
+  FRAME_COLORS.forEach(c=>{
+    const s = document.createElement('div');
+    s.className = 'swatch' + (myProfile.frame.color===c ? ' sel':'');
+    s.style.background = c;
+    s.addEventListener('click', ()=>{ myProfile.frame.color=c; buildFrameSwatches(); });
+    wrap.appendChild(s);
+  });
+}
+document.getElementById('frameWidthInput').addEventListener('input', e=>{
+  const v = Math.min(6, parseInt(e.target.value,10));
+  myProfile.frame.width = v;
+  document.getElementById('frameWidthLabel').textContent = v+'px';
+});
+document.getElementById('avatarUploadBtn').addEventListener('click', ()=> document.getElementById('avatarFileInput').click());
+document.getElementById('avatarFileInput').addEventListener('change', async e=>{
+  const file = e.target.files[0]; if(!file) return;
+  const cropped = await openCropper(file, 'circle', 240, 240);
+  if(cropped){
+    myProfile.avatar = cropped;
+    document.getElementById('profileAvatarPreview').outerHTML = avatarHtml(myProfile.name, myProfile.avatar, myProfile.frame, 64).replace('class="avatar"','class="avatar" id="profileAvatarPreview"');
+  }
+  e.target.value = '';
+});
+document.getElementById('saveProfileBtn').addEventListener('click', async ()=>{
+  const n = document.getElementById('profileNameInput').value.trim();
+  if(!n){ toast("呼び名を入れてください"); return; }
+  myProfile.name = n.slice(0,16);
+  await saveProfile();
+  closeModal('profileModal');
+  toast("プロフィールを保存しました");
+});
+
+/* ======================================================================
+   generic modal helpers
+   ====================================================================== */
+function openModal(id){ document.getElementById(id).classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('[data-close]').forEach(b=> b.addEventListener('click', ()=> closeModal(b.dataset.close)));
+
+/* ======================================================================
+   entry screen: tabs / saved rooms
+   ====================================================================== */
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('tabNew').classList.toggle('hidden', t.dataset.tab!=='new');
+    document.getElementById('tabSaved').classList.toggle('hidden', t.dataset.tab!=='saved');
+    if(t.dataset.tab==='saved') renderSavedRooms();
+  });
+});
+async function getMyRooms(){ return await getJSON('myRooms', false, []); }
+async function saveMyRoom(entry){
+  let rooms = await getMyRooms();
+  rooms = rooms.filter(r=>r.key!==entry.key);
+  rooms.unshift(entry);
+  rooms = rooms.slice(0,30);
+  await setJSON('myRooms', false, rooms);
+}
+async function renderSavedRooms(){
+  const rooms = await getMyRooms();
+  const wrap = document.getElementById('savedRoomsList');
+  if(rooms.length===0){ wrap.innerHTML = '<div class="empty-rooms">まだ入った部屋がありません</div>'; return; }
+  wrap.innerHTML = '';
+  rooms.forEach(r=>{
+    const chip = document.createElement('div');
+    chip.className = 'room-chip';
+    chip.innerHTML = `<div class="rc-badge">${escapeHtml(initialOf(r.displayName||r.passphrase))}</div>
+      <div><div class="rc-name">${escapeHtml(r.displayName||r.passphrase)}</div><div class="rc-key">合言葉: ${escapeHtml(r.passphrase)}</div></div>
+      <button class="rc-del" data-key="${r.key}">✕</button>`;
+    chip.addEventListener('click', (e)=>{ if(e.target.closest('.rc-del')) return; enterRoom(r.passphrase); });
+    chip.querySelector('.rc-del').addEventListener('click', async ()=>{
+      let rooms2 = await getMyRooms();
+      rooms2 = rooms2.filter(x=>x.key!==r.key);
+      await setJSON('myRooms', false, rooms2);
+      renderSavedRooms();
+    });
+    wrap.appendChild(chip);
+  });
+}
+document.getElementById('joinBtn').addEventListener('click', ()=> enterRoom(document.getElementById('roomInput').value.trim()));
+document.getElementById('roomInput').addEventListener('keydown', e=>{ if(e.key==='Enter') enterRoom(e.target.value.trim()); });
+
+async function enterRoom(passphrase){
+  if(!myProfile.name){ toast("先にプロフィールで呼び名を設定してください"); document.getElementById('openProfileBtn').click(); return; }
+  if(!passphrase){ toast("合言葉を入れてください"); return; }
+  room = safeKey(passphrase);
+  roomLabel = passphrase;
+  await saveMyRoom({ key: room, passphrase, displayName:"", lastVisited: nowTs() });
+
+  document.getElementById('entryScreen').classList.add('hidden');
+  document.getElementById('chatScreen').classList.remove('hidden');
+  document.getElementById('roomTitle').firstChild.textContent = passphrase + " ";
+  lastRenderedIds = new Set();
+  hasLoadedOnce = false;
+
+  if(window.Notification && window.Notification.permission==='default'){ window.Notification.requestPermission().catch(()=>{}); }
+
+  await heartbeat();
+  await pollAll();
+  clearInterval(pollTimer); clearInterval(hbTimer);
+  pollTimer = setInterval(pollAll, 2000);
+  hbTimer = setInterval(heartbeat, 8000);
+}
+document.getElementById('backToEntryBtn').addEventListener('click', ()=>{
+  clearInterval(pollTimer); clearInterval(hbTimer); clearInterval(typingPollTimer);
+  document.getElementById('chatScreen').classList.add('hidden');
+  document.getElementById('entryScreen').classList.remove('hidden');
+});
+
+/* ======================================================================
+   presence / heartbeat / typing / polling
+   ====================================================================== */
+let pollTimer=null, hbTimer=null, typingPollTimer=null;
+let lastRenderedIds = new Set();
+let processedSignalIds = new Set();
+
+async function heartbeat(){
+  const state = await readState();
+  const cutoff = nowTs()-20000;
+  const pruned = {};
+  for(const [pid,info] of Object.entries(state.presence||{})) if(info.ts>cutoff || pid===myId) pruned[pid]=info;
+  pruned[myId] = { name: myProfile.name, ts: nowTs(), avatar: myProfile.avatar, frame: myProfile.frame };
+  state.presence = pruned;
+  state.reads = state.reads || {};
+  state.reads[myId] = nowTs();
+  // Keep the shared read-marker map small.
+  for(const [pid,ts] of Object.entries(state.reads)){
+    if(ts < cutoff) delete state.reads[pid];
+  }
+  await writeState(state);
+}
+function otherPeers(presence){
+  const cutoff = nowTs()-20000;
+  return Object.entries(presence||{}).filter(([pid,info])=>pid!==myId && info.ts>cutoff).map(([pid,info])=>({id:pid,...info}));
+}
+async function pollAll(){
+  const state = await readState();
+  renderRoomMeta(state);
+  renderPresence(state.presence);
+  await renderMessages(state.messages||[], state.presence||{}, state.reads||{});
+
+  const typing = await getJSON(K_TYPING(), true, {});
+  renderTyping(typing);
+
+  const signals = await getJSON(K_SIGNAL(), true, []);
+  for(const sig of signals){
+    if(sig.to!==myId) continue;
+    if(processedSignalIds.has(sig.id)) continue;
+    processedSignalIds.add(sig.id);
+    handleSignal(sig);
+  }
+  if(processedSignalIds.size>600) processedSignalIds = new Set(Array.from(processedSignalIds).slice(-300));
+
+  pollCallSession();
+  pollYt();
+  pollShiritori();
+  hasLoadedOnce = true;
+}
+function renderRoomMeta(state){
+  const title = document.getElementById('roomTitle');
+  const label = state.roomName ? state.roomName : roomLabel;
+  title.firstChild.textContent = label + " ";
+  const thread = document.getElementById('thread');
+  thread.style.backgroundImage = state.bg ? `url(${state.bg})` : 'none';
+}
+function renderPresence(presence){
+  const others = otherPeers(presence);
+  document.getElementById('presenceText').textContent = others.length===0 ? "自分だけがオンライン" : `オンライン ${others.length+1}人`;
+}
+let typingThrottle = 0;
+document.getElementById('msgInput').addEventListener('input', async ()=>{
+  const n = nowTs();
+  if(n - typingThrottle < 1800) return;
+  typingThrottle = n;
+  const t = await getJSON(K_TYPING(), true, {});
+  t[myId] = { name: myProfile.name, ts: n };
+  await setJSON(K_TYPING(), true, t);
+});
+function renderTyping(typing){
+  const cutoff = nowTs()-3000;
+  const names = Object.entries(typing||{}).filter(([pid,info])=>pid!==myId && info.ts>cutoff).map(([_,info])=>info.name);
+  document.getElementById('typingLine').textContent = names.length ? names.join('、')+' が入力中…' : '';
+}
+async function clearMyTyping(){
+  const t = await getJSON(K_TYPING(), true, {});
+  delete t[myId];
+  await setJSON(K_TYPING(), true, t);
+}
+
+/* ======================================================================
+   messages: send / render / edit / delete / react / read
+   ====================================================================== */
+async function pushMessage(msg){
+  const state = await readState();
+  state.messages = state.messages || [];
+  state.messages.push(msg);
+  if(state.messages.length>250) state.messages = state.messages.slice(-250);
+  state.presence = state.presence || {};
+  state.presence[myId] = { name: myProfile.name, ts: nowTs(), avatar: myProfile.avatar, frame: myProfile.frame };
+  const ok = await writeState(state);
+  if(!ok) toast("送信に失敗しました（容量オーバーの可能性）");
+  else await renderMessages(state.messages, state.presence);
+}
+
+document.getElementById('composerForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+  if(!text) return;
+  input.value = '';
+  clearMyTyping();
+  await pushMessage({ id:crypto.randomUUID(), pid:myId, name:myProfile.name, ts:nowTs(), type:'text', text, reactions:{} });
+});
+document.getElementById('msgInput').addEventListener('keydown', e=>{
+  if(e.key==='Enter' && !e.shiftKey && !e.isComposing){
+    e.preventDefault();
+    document.getElementById('composerForm').requestSubmit();
+  }
+});
+
+async function renderMessages(messages, presence, readTimes){
+  if(!messages) return;
+  readTimes = readTimes || {};
+  const thread = document.getElementById('thread');
+  const newOnes = messages.filter(m=>!lastRenderedIds.has(m.id));
+  const changedIds = new Set(messages.filter(m=>lastRenderedIds.has(m.id) && lastRenderedIds.get && false).map(m=>m.id)); // placeholder, real diff below
+
+  // full re-render approach for edited/reactions/deleted: rebuild each time but keep scroll smart
+  const wasNearBottom = (thread.scrollHeight - thread.scrollTop - thread.clientHeight) < 140;
+  document.getElementById('emptyState').style.display = messages.length ? 'none' : 'block';
+
+  // remove stale rendered rows and rebuild fully (dataset small, OK)
+  Array.from(thread.querySelectorAll('.msg-row')).forEach(n=>n.remove());
+  lastRenderedIds = new Set();
+
+  for(const m of messages){
+    lastRenderedIds.add(m.id);
+    const row = buildMessageRow(m, presence, readTimes);
+    thread.appendChild(row);
+    if(m.type!=='text' && m.mediaKey) loadMedia(m.mediaKey, row);
+  }
+  if(wasNearBottom || newOnes.some(m=>m.pid===myId)){
+    thread.scrollTo({ top: thread.scrollHeight, behavior:'smooth' });
+  }
+
+  // notifications for genuinely new messages from others
+  if(hasLoadedOnce){
+    newOnes.filter(m=>m.pid!==myId && !m.deleted).forEach(m=>{
+      let body = m.text;
+      if(m.type==='image') body='[画像を送信しました]';
+      else if(m.type==='video') body='[動画を送信しました]';
+      else if(m.type==='audio') body='[音声ファイルを送信しました]';
+      else if(m.type==='voice') body='[ボイスメッセージ]';
+      else if(m.type==='gif') body='[GIF]';
+      else if(m.type==='sticker') body='[スタンプ]';
+      notify(m.name, body||'');
+    });
+  }
+}
+function notify(name, body){
+  try{
+    if(window.Notification && Notification.permission==='granted'){
+      new Notification(`${name}　${body}`.slice(0,120));
+    }
+  }catch(e){}
+}
+
+function buildMessageRow(m, presence, readTimes){
+  readTimes = readTimes || {};
+  const row = document.createElement('div');
+  row.className = 'msg-row ' + (m.pid===myId ? 'me':'them');
+  row.dataset.id = m.id;
+  const info = presence[m.pid] || {};
+  const av = document.createElement('div');
+  av.innerHTML = avatarHtml(m.name, info.avatar, info.frame, 32);
+  row.appendChild(av.firstChild);
+
+  const col = document.createElement('div');
+  col.className = 'msg-col';
+
+  const head = document.createElement('div');
+  head.className = 'msg-head';
+  head.innerHTML = `<span class="msg-name">${escapeHtml(m.name)}</span><span class="msg-time">${fmtClock(m.ts)}</span>` + (m.edited ? '<span class="msg-edited">(編集済み)</span>':'');
+  col.appendChild(head);
+
+  const bwrap = document.createElement('div');
+  bwrap.className = 'bubble-wrap';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  if(m.deleted){
+    bubble.classList.add('deleted');
+    bubble.textContent = 'メッセージは削除されました';
+  } else if(m.type==='text'){
+    bubble.textContent = m.text;
+  } else if(m.type==='gif'){
+    const img=document.createElement('img');
+    img.className='gif-img'; img.alt='GIF'; img.loading='lazy';
+    const gifSource = m.dataURL || m.url || '';
+    img.src = gifSource;
+    img.onerror=()=>{
+      bubble.innerHTML='';
+      if(m.url){
+        const a=document.createElement('a'); a.href=m.url; a.target='_blank'; a.rel='noopener noreferrer'; a.textContent='GIFを開く';
+        a.style.cssText='color:inherit;font-weight:800;text-decoration:underline;';
+        bubble.appendChild(a);
+      } else {
+        bubble.textContent='GIFを表示できませんでした';
+      }
+    };
+    bubble.appendChild(img);
+  } else if(m.type==='sticker'){
+    bubble.innerHTML = `<img class="sticker-img" src="${m.dataURL}" alt="sticker">`;
+  } else if(m.type==='gif' && m.mediaKey){
+    bubble.dataset.mediaKey = m.mediaKey;
+    bubble.dataset.mtype = 'gif';
+    bubble.innerHTML = `<span class="media-loading">読み込み中…</span>`;
+  } else {
+    bubble.dataset.mediaKey = m.mediaKey||'';
+    bubble.dataset.mtype = m.type;
+    bubble.innerHTML = `<span class="media-loading">読み込み中…</span>`;
+  }
+  bwrap.appendChild(bubble);
+
+  if(!m.deleted && m.pid===myId){
+    const menuBtn = document.createElement('button');
+    menuBtn.className = 'msg-menu-btn'; menuBtn.textContent = '⋯';
+    menuBtn.addEventListener('click', ()=> showMsgMenu(m));
+    bwrap.appendChild(menuBtn);
+  }
+  col.appendChild(bwrap);
+
+  if(!m.deleted){
+    const rx = document.createElement('div');
+    rx.className = 'reactions';
+    const reactions = m.reactions || {};
+    Object.entries(reactions).forEach(([emoji, pids])=>{
+      if(!pids.length) return;
+      const chip = document.createElement('button');
+      chip.className = 'reaction-chip' + (pids.includes(myId)?' mine':'');
+      chip.innerHTML = `${emoji} <span>${pids.length}</span>`;
+      chip.addEventListener('click', ()=> toggleReaction(m.id, emoji));
+      rx.appendChild(chip);
+    });
+    const addBtn = document.createElement('button');
+    addBtn.className = 'add-reaction'; addBtn.textContent = '+';
+    addBtn.addEventListener('click', (e)=> quickReactionPicker(m.id, e.currentTarget));
+    rx.appendChild(addBtn);
+    col.appendChild(rx);
+  }
+
+  if(!m.deleted && m.pid===myId){
+    const anyoneRead = Object.entries(readTimes).some(([pid,ts])=>pid!==myId && Number(ts)>Number(m.ts));
+    if(anyoneRead){
+      const tag = document.createElement('div');
+      tag.className = 'read-tag';
+      tag.textContent = '既読';
+      col.appendChild(tag);
+    }
+  }
+
+  row.appendChild(col);
+  return row;
+}
+
+async function loadMedia(mediaKey, row){
+  let media = mediaCache.get(mediaKey);
+  if(!media){
+    media = await getJSON(K_MEDIA(mediaKey), true, null);
+    if(media !== null && media !== undefined) mediaCache.set(mediaKey, media);
+  }
+  const bubble = row.querySelector('.bubble[data-media-key="'+mediaKey+'"]') || row.querySelector('.bubble');
+  if(!bubble) return;
+  if(!media){ bubble.innerHTML = '<span class="media-loading">読み込みできませんでした</span>'; return; }
+  const mtype = bubble.dataset.mtype;
+  let src = media;
+  if(media instanceof Blob){
+    if(!mediaObjectUrls.has(mediaKey)) mediaObjectUrls.set(mediaKey, URL.createObjectURL(media));
+    src = mediaObjectUrls.get(mediaKey);
+  }
+  if(mtype==='image') bubble.innerHTML = `<img class="msg-media" src="${src}" alt="">`;
+  else if(mtype==='gif') bubble.innerHTML = `<img class="gif-img" src="${src}" alt="GIF">`;
+  else if(mtype==='video') bubble.innerHTML = `<video class="msg-media" src="${src}" controls playsinline preload="metadata"></video>`;
+  else if(mtype==='audio' || mtype==='voice') bubble.innerHTML = `<audio class="msg-media" src="${src}" controls preload="metadata"></audio>`;
+}
+
+function showMsgMenu(m){
+  document.querySelectorAll('.msg-action-menu').forEach(el=>el.remove());
+  const menu = document.createElement('div');
+  menu.className = 'msg-action-menu';
+  const editDisabled = m.type !== 'text';
+  menu.innerHTML = `
+    <button type="button" data-act="edit" ${editDisabled?'disabled style="opacity:.45;cursor:not-allowed;"':''}>✏️ 編集</button>
+    <button type="button" data-act="delete" class="danger">🗑️ 削除</button>`;
+  document.body.appendChild(menu);
+  const anchor = document.querySelector(`.msg-row[data-id="${CSS.escape(m.id)}"] .msg-menu-btn`);
+  const rect = anchor ? anchor.getBoundingClientRect() : null;
+  const left = rect ? Math.min(rect.left, window.innerWidth - menu.offsetWidth - 10) : 16;
+  const top = rect ? Math.min(rect.bottom + 6, window.innerHeight - menu.offsetHeight - 10) : 16;
+  menu.style.left = Math.max(10, left) + 'px';
+  menu.style.top = Math.max(10, top) + 'px';
+  menu.querySelector('[data-act="edit"]').addEventListener('click', ()=>{
+    if(editDisabled) return;
+    const nt = prompt('メッセージを編集', m.text);
+    if(nt!==null && nt.trim()) editMessage(m.id, nt.trim());
+    menu.remove();
+  });
+  menu.querySelector('[data-act="delete"]').addEventListener('click', ()=>{
+    if(confirm('このメッセージを削除しますか？')) deleteMessage(m.id);
+    menu.remove();
+  });
+  setTimeout(()=>{
+    const h=e=>{ if(!menu.contains(e.target) && !e.target.closest('.msg-menu-btn')){ menu.remove(); document.removeEventListener('click',h); } };
+    document.addEventListener('click',h);
+  },0);
+}
+
+async function editMessage(id, newText){
+  const state = await readState();
+  const msg = (state.messages||[]).find(x=>x.id===id);
+  if(!msg || msg.pid!==myId) return;
+  msg.text = newText; msg.edited = true;
+  await writeState(state);
+  await renderMessages(state.messages, state.presence);
+}
+async function deleteMessage(id){
+  const state = await readState();
+  const msg = (state.messages||[]).find(x=>x.id===id);
+  if(!msg || msg.pid!==myId) return;
+  msg.deleted = true; msg.text=''; delete msg.mediaKey; delete msg.url; delete msg.dataURL;
+  await writeState(state);
+  await renderMessages(state.messages, state.presence);
+}
+async function toggleReaction(id, emoji){
+  const state = await readState();
+  const msg = (state.messages||[]).find(x=>x.id===id);
+  if(!msg) return;
+  msg.reactions = msg.reactions || {};
+  msg.reactions[emoji] = msg.reactions[emoji] || [];
+  const idx = msg.reactions[emoji].indexOf(myId);
+  if(idx>=0) msg.reactions[emoji].splice(idx,1); else msg.reactions[emoji].push(myId);
+  await writeState(state);
+  await renderMessages(state.messages, state.presence);
+}
+const QUICK_EMOJIS = ["👍","❤️","😂","😮","😢","🎉"];
+function quickReactionPicker(id, anchor){
+  const existing = document.querySelector('.quick-rx-pop');
+  if(existing) existing.remove();
+  const pop = document.createElement('div');
+  pop.className = 'quick-rx-pop glass';
+  pop.style.cssText = 'position:absolute; z-index:30; padding:6px; display:flex; gap:4px; border-radius:999px;';
+  const rect = anchor.getBoundingClientRect();
+  pop.style.left = (rect.left + window.scrollX - 80) + 'px';
+  pop.style.top = (rect.top + window.scrollY - 44) + 'px';
+  QUICK_EMOJIS.forEach(em=>{
+    const b = document.createElement('button');
+    b.textContent = em; b.style.cssText='background:none;border:none;font-size:1.15rem;cursor:pointer;';
+    b.addEventListener('click', ()=>{ toggleReaction(id, em); pop.remove(); });
+    pop.appendChild(b);
+  });
+  document.body.appendChild(pop);
+  setTimeout(()=> document.addEventListener('click', function h(e){ if(!pop.contains(e.target)){ pop.remove(); document.removeEventListener('click',h);} }), 10);
+}
+
+/* ======================================================================
+   emoji / sticker / gif popovers + attachments
+   ====================================================================== */
+const emojiPicker = document.getElementById('emojiPicker');
+if(emojiPicker){
+  emojiPicker.addEventListener('emoji-click', event=>{
+    const input=document.getElementById('msgInput');
+    input.value += event.detail.unicode || event.detail.emoji?.unicode || '';
+    input.focus();
+  });
+}
+
+function togglePopover(id){
+  ['emojiPopover','stickerPopover'].forEach(pid=>{
+    if(pid===id) document.getElementById(pid).classList.toggle('hidden');
+    else document.getElementById(pid).classList.add('hidden');
+  });
+}
+document.getElementById('emojiBtn').addEventListener('click', ()=> togglePopover('emojiPopover'));
+document.getElementById('stickerBtn').addEventListener('click', async ()=>{ togglePopover('stickerPopover'); await renderStickerGrid(); });
+
+async function getMyStickers(){ return await getJSON('stickers', false, []); }
+async function renderStickerGrid(){
+  const stickers = await getMyStickers();
+  const grid = document.getElementById('stickerGrid');
+  grid.innerHTML = '';
+  stickers.forEach(s=>{
+    const img = document.createElement('img');
+    img.src = s;
+    img.addEventListener('click', ()=> sendSticker(s));
+    grid.appendChild(img);
+  });
+  const addTile = document.createElement('div');
+  addTile.className = 'sticker-add'; addTile.textContent = '+';
+  addTile.addEventListener('click', ()=>{
+    const input = document.getElementById('fileInputImage');
+    input.dataset.mode = 'sticker';
+    input.click();
+  });
+  grid.appendChild(addTile);
+}
+async function sendSticker(dataURL){
+  document.getElementById('stickerPopover').classList.add('hidden');
+  await pushMessage({ id:crypto.randomUUID(), pid:myId, name:myProfile.name, ts:nowTs(), type:'sticker', dataURL, reactions:{} });
+}
+document.getElementById('gifSendBtn').addEventListener('click', async ()=>{
+  const url = document.getElementById('gifUrlInput').value.trim();
+  if(!url) return;
+  if(!/^https?:\/\/.+/i.test(url)){ toast('GIFのURLを入力してください'); return; }
+  document.getElementById('gifUrlInput').value='';
+  document.getElementById('stickerPopover').classList.add('hidden');
+  await pushMessage({ id:crypto.randomUUID(), pid:myId, name:myProfile.name, ts:nowTs(), type:'gif', url, reactions:{} });
+});
+
+document.getElementById('attachBtn').addEventListener('click', ()=>{
+  const row = document.getElementById('attachRow');
+  row.classList.toggle('hidden');
+  row.innerHTML = '';
+  [['image','画像'],['video','動画'],['audio','音声ファイル'],['gif','GIF']].forEach(([kind,label])=>{
+    const b = document.createElement('button');
+    b.className = 'btn btn-ghost'; b.style.padding='8px 14px'; b.style.fontSize='0.82rem';
+    b.textContent = label;
+    b.addEventListener('click', ()=>{
+      document.getElementById('fileInput'+kind.charAt(0).toUpperCase()+kind.slice(1)).click();
+      row.classList.add('hidden');
+    });
+    row.appendChild(b);
+  });
+});
+
+const MAX_MEDIA_BYTES = 150 * 1024 * 1024;
+
+document.getElementById('fileInputImage').addEventListener('change', async e=>{
+  const file = e.target.files[0]; e.target.value=''; if(!file) return;
+  if(e.target.dataset.mode==='sticker'){
+    e.target.dataset.mode='';
+    const cropped = await resizeImageFile(file, 300, 0.9);
+    let stickers = await getMyStickers();
+    stickers.unshift(cropped); stickers = stickers.slice(0,60);
+    await setJSON('stickers', false, stickers);
+    toast("スタンプに追加しました");
+    renderStickerGrid();
+    return;
+  }
+  const dataURL = await resizeImageFile(file, 1280, 0.82);
+  await sendMedia('image', dataURL);
+});
+document.getElementById('fileInputVideo').addEventListener('change', async e=>{
+  const file = e.target.files[0]; e.target.value=''; if(!file) return;
+  if(file.size > MAX_MEDIA_BYTES){ toast("動画は150MBまでです"); return; }
+  await sendMedia('video', file);
+});
+document.getElementById('fileInputAudio').addEventListener('change', async e=>{
+  const file = e.target.files[0]; e.target.value=''; if(!file) return;
+  if(file.size > MAX_MEDIA_BYTES){ toast("音声ファイルは150MBまでです"); return; }
+  await sendMedia('audio', file);
+});
+document.getElementById('gifFileBtn').addEventListener('click', ()=> document.getElementById('fileInputGif').click());
+document.getElementById('fileInputGif').addEventListener('change', async e=>{
+  const file = e.target.files[0]; e.target.value=''; if(!file) return;
+  if(file.type!=='image/gif'){ toast("GIFファイルを選んでください"); return; }
+  if(file.size > MAX_MEDIA_BYTES){ toast("GIFは150MBまでです"); return; }
+  const mediaKey = crypto.randomUUID();
+  const ok = await setJSON(K_MEDIA(mediaKey), true, file);
+  if(!ok){ toast("GIFの保存に失敗しました"); return; }
+  mediaCache.set(mediaKey, file);
+  document.getElementById('stickerPopover').classList.add('hidden');
+  await pushMessage({ id:crypto.randomUUID(), pid:myId, name:myProfile.name, ts:nowTs(), type:'gif', mediaKey, reactions:{} });
+});
+async function sendMedia(type, fileOrData){
+  const size = fileOrData instanceof Blob ? fileOrData.size : 0;
+  if(size > MAX_MEDIA_BYTES){ toast("ファイルサイズが大きすぎます"); return; }
+  const mediaKey = crypto.randomUUID();
+  const ok = await setJSON(K_MEDIA(mediaKey), true, fileOrData);
+  if(!ok){ toast("アップロードに失敗しました（保存容量を確認してください）"); return; }
+  mediaCache.set(mediaKey, fileOrData);
+  await pushMessage({ id:crypto.randomUUID(), pid:myId, name:myProfile.name, ts:nowTs(), type, mediaKey, reactions:{} });
+}
+
+/* ---- voice message (max 10s) ---- */
+let mediaRecorder=null, recChunks=[], recTimer=null;
+document.getElementById('voiceBtn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('voiceBtn');
+  if(mediaRecorder && mediaRecorder.state==='recording'){ mediaRecorder.stop(); return; }
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    recChunks = [];
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = e=> recChunks.push(e.data);
+    mediaRecorder.onstop = async ()=>{
+      stream.getTracks().forEach(t=>t.stop());
+      btn.classList.remove('recording');
+      clearTimeout(recTimer);
+      const blob = new Blob(recChunks, {type: mediaRecorder?.mimeType || 'audio/webm'});
+      await sendMedia('voice', blob);
+    };
+    mediaRecorder.start();
+    btn.classList.add('recording');
+    toast("録音中…（最長10秒）");
+    recTimer = setTimeout(()=>{ if(mediaRecorder && mediaRecorder.state==='recording') mediaRecorder.stop(); }, 10000);
+  }catch(err){ toast("マイクを使用できませんでした"); }
+});
+
+/* ======================================================================
+   room settings (name / background)
+   ====================================================================== */
+document.getElementById('settingsBtn').addEventListener('click', async ()=>{
+  const state = await readState();
+  document.getElementById('roomNameInput').value = state.roomName || '';
+  openModal('settingsModal');
+  window._pendingBg = state.bg || null;
+});
+document.getElementById('bgUploadBtn').addEventListener('click', ()=> document.getElementById('bgFileInput').click());
+document.getElementById('bgFileInput').addEventListener('change', async e=>{
+  const file = e.target.files[0]; e.target.value=''; if(!file) return;
+  const cropped = await openCropper(file, 'rect', 720, 1180);
+  if(cropped){ window._pendingBg = cropped; toast("背景を調整しました。保存を押してください"); }
+});
+document.getElementById('bgClearBtn').addEventListener('click', ()=>{ window._pendingBg = null; toast("背景を解除します（保存を押してください）"); });
+document.getElementById('saveRoomSettingsBtn').addEventListener('click', async ()=>{
+  const state = await readState();
+  state.roomName = document.getElementById('roomNameInput').value.trim();
+  state.bg = window._pendingBg !== undefined ? window._pendingBg : state.bg;
+  const ok = await writeState(state);
+  if(ok){ closeModal('settingsModal'); renderRoomMeta(state); toast("保存しました"); }
+  else toast("保存に失敗しました（容量オーバーの可能性）");
+});
+
+document.getElementById('roomTitle').addEventListener('click', ()=> document.getElementById('settingsBtn').click());
+
+/* ======================================================================
+   CALL SYSTEM (mesh, joinable anytime)
+   ====================================================================== */
+const ICE_SERVERS = [{urls:'stun:stun.l.google.com:19302'}];
+let callSessionId = null;
+let callKind = 'audio';
+let inCall = false;
+let localStream = null;
+let screenStream = null;
+let pcMap = {}; // peerId -> {pc, remoteStream}
+let pendingCandidates = {}; // peerId -> [candidates]
+let isMuted = false, camOff = false, isScreenSharing = false;
+
+async function readCall(){ return await getJSON(K_CALL(), true, {active:false}); }
+async function writeCall(c){ return await setJSON(K_CALL(), true, c); }
+async function sendSignal(type, to, extra){
+  let list = await getJSON(K_SIGNAL(), true, []);
+  const cutoff = nowTs() - 3*60*1000;
+  list = list.filter(s=>s.ts>cutoff);
+  list.push(Object.assign({id:crypto.randomUUID(), from:myId, to, type, sessionId:callSessionId, ts:nowTs()}, extra||{}));
+  await setJSON(K_SIGNAL(), true, list);
+}
+
+document.getElementById('callAudioBtn').addEventListener('click', ()=> openOrJoinCall('audio'));
+document.getElementById('callVideoBtn').addEventListener('click', ()=> openOrJoinCall('video'));
+
+async function openOrJoinCall(kind){
+  if(inCall){ toast("すでに通話中です"); return; }
+  const call = await readCall();
+  if(call.active && call.participants && Object.keys(call.participants).length>0){
+    callSessionId = call.sessionId; callKind = call.kind || kind;
+  } else {
+    callSessionId = crypto.randomUUID(); callKind = kind;
+  }
+  await startLocalMedia(callKind);
+  await joinCallSession();
+}
+async function startLocalMedia(kind){
+  try{
+    localStream = await navigator.mediaDevices.getUserMedia({ audio:true, video: kind==='video' });
+  }catch(err){ toast("マイク/カメラを使用できませんでした"); throw err; }
+}
+async function joinCallSession(){
+  inCall = true;
+  document.getElementById('callOverlay').classList.add('show');
+  document.getElementById('callTitle').textContent = (callKind==='video'?'ビデオ通話':'音声通話');
+  renderCallTiles();
+
+  const call = await readCall();
+  const existingIds = Object.keys((call.participants)||{}).filter(pid=>pid!==myId);
+  call.active = true; call.sessionId = callSessionId; call.kind = callKind;
+  call.participants = call.participants || {};
+  call.participants[myId] = { name: myProfile.name, ts: nowTs() };
+  await writeCall(call);
+
+  // I am the new joiner: initiate offers to everyone already present
+  for(const pid of existingIds){ await callToPeer(pid); }
+
+  clearInterval(window._callHbTimer);
+  window._callHbTimer = setInterval(async ()=>{
+    if(!inCall) return;
+    const c = await readCall();
+    if(c.sessionId!==callSessionId){ return; }
+    c.participants = c.participants || {};
+    c.participants[myId] = { name: myProfile.name, ts: nowTs() };
+    // prune stale
+    const cutoff = nowTs()-15000;
+    Object.keys(c.participants).forEach(pid=>{ if(c.participants[pid].ts<cutoff) delete c.participants[pid]; });
+    await writeCall(c);
+  }, 5000);
+}
+async function pollCallSession(){
+  if(!inCall) return;
+  const call = await readCall();
+  if(!call.active || call.sessionId!==callSessionId){ return; }
+  const parts = call.participants || {};
+  Object.keys(parts).forEach(pid=>{
+    if(pid!==myId && !pcMap[pid]){
+      // someone new appeared but hasn't offered us yet — wait for their offer (they are the new joiner)
+    }
+  });
+  // update names in tiles
+  renderCallTiles();
+}
+async function callToPeer(peerId){
+  const entry = ensurePeerConnection(peerId);
+  localStream.getTracks().forEach(tr=> entry.pc.addTrack(tr, localStream));
+  const offer = await entry.pc.createOffer();
+  await entry.pc.setLocalDescription(offer);
+  await sendSignal('offer', peerId, { sdp: entry.pc.localDescription, kind: callKind, name: myProfile.name });
+}
+function ensurePeerConnection(peerId){
+  if(pcMap[peerId]) return pcMap[peerId];
+  const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+  const entry = { pc, remoteStream: new MediaStream() };
+  pc.onicecandidate = e=>{ if(e.candidate) sendSignal('candidate', peerId, {candidate:e.candidate}); };
+  pc.ontrack = e=>{
+    e.streams[0].getTracks().forEach(t=> entry.remoteStream.addTrack(t));
+    renderCallTiles();
+  };
+  pc.onconnectionstatechange = ()=>{
+    if(['failed','disconnected','closed'].includes(pc.connectionState)){
+      removePeer(peerId);
+    }
+  };
+  pcMap[peerId] = entry;
+  return entry;
+}
+function removePeer(peerId){
+  const entry = pcMap[peerId];
+  if(entry){ try{entry.pc.close();}catch(e){} delete pcMap[peerId]; }
+  renderCallTiles();
+}
+async function handleSignal(sig){
+  if(sig.type==='call-invite'){
+    if(inCall) return;
+    document.getElementById('incomingCard').classList.remove('hidden');
+    document.getElementById('incomingName').textContent = sig.name || 'friend';
+    document.getElementById('incomingAvatar').outerHTML = avatarHtml(sig.name,null,null,40).replace('class="avatar"','class="avatar" id="incomingAvatar"');
+    document.getElementById('incomingSub').textContent = (sig.kind==='video'?'ビデオ':'音声')+'通話に招待されています';
+    window._pendingInvite = sig;
+    return;
+  }
+  if(sig.type==='offer'){
+    if(sig.sessionId!==callSessionId && inCall) return;
+    if(!inCall){
+      // treat as an ad-hoc invite fallback
+      window._pendingOffer = sig;
+      document.getElementById('incomingCard').classList.remove('hidden');
+      document.getElementById('incomingName').textContent = sig.name || 'friend';
+      document.getElementById('incomingSub').textContent = (sig.kind==='video'?'ビデオ':'音声')+'通話の着信';
+      return;
+    }
+    const entry = ensurePeerConnection(sig.from);
+    await entry.pc.setRemoteDescription(new RTCSessionDescription(sig.sdp));
+    flushCandidates(sig.from);
+    if(localStream) localStream.getTracks().forEach(tr=>{ if(!entry.pc.getSenders().find(s=>s.track===tr)) entry.pc.addTrack(tr, localStream); });
+    const answer = await entry.pc.createAnswer();
+    await entry.pc.setLocalDescription(answer);
+    await sendSignal('answer', sig.from, { sdp: entry.pc.localDescription });
+  } else if(sig.type==='answer'){
+    const entry = pcMap[sig.from];
+    if(entry){ await entry.pc.setRemoteDescription(new RTCSessionDescription(sig.sdp)); flushCandidates(sig.from); }
+  } else if(sig.type==='candidate'){
+    const entry = pcMap[sig.from];
+    if(entry && entry.pc.remoteDescription){ entry.pc.addIceCandidate(new RTCIceCandidate(sig.candidate)).catch(()=>{}); }
+    else { pendingCandidates[sig.from] = pendingCandidates[sig.from]||[]; pendingCandidates[sig.from].push(sig.candidate); }
+  } else if(sig.type==='hangup'){
+    removePeer(sig.from);
+  }
+}
+function flushCandidates(peerId){
+  const entry = pcMap[peerId]; if(!entry) return;
+  (pendingCandidates[peerId]||[]).forEach(c=> entry.pc.addIceCandidate(new RTCIceCandidate(c)).catch(()=>{}));
+  pendingCandidates[peerId] = [];
+}
+document.getElementById('incomingAcceptBtn').addEventListener('click', async ()=>{
+  document.getElementById('incomingCard').classList.add('hidden');
+  const sig = window._pendingOffer || window._pendingInvite;
+  if(!sig) return;
+  callSessionId = sig.sessionId || crypto.randomUUID();
+  callKind = sig.kind || 'audio';
+  await startLocalMedia(callKind);
+  await joinCallSession();
+  if(window._pendingOffer){
+    await handleSignal(window._pendingOffer);
+  }
+  window._pendingOffer = null; window._pendingInvite = null;
+});
+document.getElementById('incomingDeclineBtn').addEventListener('click', ()=>{
+  document.getElementById('incomingCard').classList.add('hidden');
+  const sig = window._pendingOffer || window._pendingInvite;
+  if(sig) sendSignal('hangup', sig.from, {});
+  window._pendingOffer = null; window._pendingInvite = null;
+});
+
+function renderCallTiles(){
+  const wrap = document.getElementById('callTiles');
+  wrap.innerHTML = '';
+  const localTile = document.createElement('div'); localTile.className='tile';
+  if(callKind==='video' && localStream){
+    const v = document.createElement('video'); v.autoplay=true; v.muted=true; v.playsInline=true; v.srcObject = localStream;
+    localTile.appendChild(v);
+  } else {
+    localTile.innerHTML = avatarHtml(myProfile.name, myProfile.avatar, myProfile.frame, 64).replace('class="avatar"','class="avatar tile-avatar"');
+  }
+  const ln = document.createElement('div'); ln.className='tile-name'; ln.textContent = 'あなた';
+  localTile.appendChild(ln);
+  wrap.appendChild(localTile);
+
+  const peerIds = Object.keys(pcMap);
+  if(peerIds.length===0){
+    const w = document.createElement('div'); w.className='tile waiting';
+    w.textContent = '先に部屋を開いています。友だちが来るのを待っています…';
+    wrap.appendChild(w);
+  }
+  peerIds.forEach(pid=>{
+    const entry = pcMap[pid];
+    const tile = document.createElement('div'); tile.className='tile';
+    if(callKind==='video'){
+      const v = document.createElement('video'); v.autoplay=true; v.playsInline=true; v.srcObject = entry.remoteStream;
+      tile.appendChild(v);
+    } else {
+      tile.innerHTML = avatarHtml('friend',null,null,64).replace('class="avatar"','class="avatar tile-avatar"');
+    }
+    const nm = document.createElement('div'); nm.className='tile-name'; nm.textContent = '通話相手';
+    tile.appendChild(nm);
+    wrap.appendChild(tile);
+  });
+}
+
+function updateMuteButton(){
+  const btn=document.getElementById('muteBtn');
+  const icon=btn.querySelector('.mute-icon');
+  if(isMuted){
+    btn.classList.add('is-muted');
+    btn.title='ミュート解除';
+    btn.setAttribute('aria-label','ミュート解除');
+    icon.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/><path d="M4 4l16 16"/></svg>';
+  }else{
+    btn.classList.remove('is-muted');
+    btn.title='ミュート';
+    btn.setAttribute('aria-label','ミュート');
+    icon.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"/><path d="M6 11a6 6 0 0 0 12 0M12 17v3"/></svg>';
+  }
+}
+document.getElementById('muteBtn').addEventListener('click', ()=>{
+  if(!localStream) return;
+  isMuted = !isMuted;
+  localStream.getAudioTracks().forEach(t=>t.enabled=!isMuted);
+  updateMuteButton();
+});
+document.getElementById('shareBtn').addEventListener('click', async ()=>{
+  if(!isScreenSharing){
+    try{
+      screenStream = await navigator.mediaDevices.getDisplayMedia({video:true});
+    }catch(e){ return; }
+    const track = screenStream.getVideoTracks()[0];
+    Object.values(pcMap).forEach(entry=>{
+      const sender = entry.pc.getSenders().find(s=>s.track && s.track.kind==='video');
+      if(sender) sender.replaceTrack(track);
+    });
+    track.onended = ()=> stopScreenShare();
+    isScreenSharing = true;
+    document.getElementById('shareBtn').classList.add('active');
+  } else { stopScreenShare(); }
+});
+function stopScreenShare(){
+  if(screenStream) screenStream.getTracks().forEach(t=>t.stop());
+  screenStream = null; isScreenSharing = false;
+  document.getElementById('shareBtn').classList.remove('active');
+  if(localStream){
+    const camTrack = localStream.getVideoTracks()[0];
+    Object.values(pcMap).forEach(entry=>{
+      const sender = entry.pc.getSenders().find(s=>s.track && s.track.kind==='video');
+      if(sender && camTrack) sender.replaceTrack(camTrack);
+    });
+  }
+}
+document.getElementById('leaveCallBtn').addEventListener('click', async ()=>{
+  Object.keys(pcMap).forEach(pid=>{ sendSignal('hangup', pid, {}); });
+  Object.values(pcMap).forEach(entry=>{ try{entry.pc.close();}catch(e){} });
+  pcMap = {};
+  if(localStream) localStream.getTracks().forEach(t=>t.stop());
+  if(screenStream) screenStream.getTracks().forEach(t=>t.stop());
+  localStream=null; screenStream=null; isScreenSharing=false; isMuted=false; camOff=false; updateMuteButton(); updateMuteButton();
+  inCall = false;
+  clearInterval(window._callHbTimer);
+  const call = await readCall();
+  if(call.sessionId===callSessionId && call.participants){
+    delete call.participants[myId];
+    if(Object.keys(call.participants).length===0) call.active=false;
+    await writeCall(call);
+  }
+  document.getElementById('callOverlay').classList.remove('show');
+  document.getElementById('ytPanel').classList.add('hidden');
+});
+
+/* ======================================================================
+   YouTube Party
+   ====================================================================== */
+let ytPlayer = null, ytApiReady=false, ytSuppressEvent=false;
+window.onYouTubeIframeAPIReady = function(){ ytApiReady = true; };
+(function loadYT(){
+  const tag = document.createElement('script'); tag.src="https://www.youtube.com/iframe_api";
+  document.head.appendChild(tag);
+})();
+document.getElementById('ytPartyToggleBtn').addEventListener('click', ()=>{
+  document.getElementById('ytPanel').classList.toggle('hidden');
+});
+function extractYTId(input){
+  const m = input.match(/(?:youtu\.be\/|v=|shorts\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : (input.length===11 ? input : null);
+}
+document.getElementById('ytLoadBtn').addEventListener('click', async ()=>{
+  const id = extractYTId(document.getElementById('ytUrlInput').value.trim());
+  if(!id){ toast("YouTubeのURLかIDを入れてください"); return; }
+  await setJSON(K_YT(), true, { videoId:id, isPlaying:true, currentTime:0, updatedAt:nowTs(), updatedBy:myId });
+  loadYtPlayer(id, 0, true);
+});
+function loadYtPlayer(id, startAt, autoplay){
+  const wrap = document.getElementById('ytFrameWrap');
+  wrap.innerHTML = '<div id="ytPlayerEl"></div>';
+  const tryInit = ()=>{
+    if(!ytApiReady || !window.YT || !window.YT.Player){ setTimeout(tryInit,300); return; }
+    ytPlayer = new YT.Player('ytPlayerEl', {
+      videoId:id, playerVars:{start:Math.floor(startAt||0), autoplay: autoplay?1:0},
+      events:{ onStateChange: onYtStateChange }
+    });
+  };
+  tryInit();
+}
+function onYtStateChange(e){
+  if(ytSuppressEvent) return;
+  if(e.data===YT.PlayerState.PLAYING) publishYt(true);
+  else if(e.data===YT.PlayerState.PAUSED) publishYt(false);
+}
+async function publishYt(isPlaying){
+  if(!ytPlayer) return;
+  const t = ytPlayer.getCurrentTime ? ytPlayer.getCurrentTime() : 0;
+  await setJSON(K_YT(), true, { videoId: window._ytCurrentId, isPlaying, currentTime:t, updatedAt:nowTs(), updatedBy:myId });
+}
+document.getElementById('ytPlayBtn').addEventListener('click', ()=>{ if(ytPlayer && ytPlayer.playVideo) ytPlayer.playVideo(); });
+document.getElementById('ytPauseBtn').addEventListener('click', ()=>{ if(ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo(); });
+async function pollYt(){
+  if(!inCall) return;
+  const yt = await getJSON(K_YT(), true, null);
+  if(!yt || !yt.videoId) return;
+  if(yt.updatedBy===myId) return;
+  if(window._ytCurrentId!==yt.videoId){
+    window._ytCurrentId = yt.videoId;
+    document.getElementById('ytPanel').classList.remove('hidden');
+    loadYtPlayer(yt.videoId, yt.currentTime, yt.isPlaying);
+    return;
+  }
+  if(!ytPlayer || !ytPlayer.getCurrentTime) return;
+  ytSuppressEvent = true;
+  const drift = Math.abs(ytPlayer.getCurrentTime() - (yt.currentTime + (nowTs()-yt.updatedAt)/1000));
+  if(drift>2.5) ytPlayer.seekTo(yt.currentTime + (nowTs()-yt.updatedAt)/1000, true);
+  if(yt.isPlaying && ytPlayer.getPlayerState()!==1) ytPlayer.playVideo();
+  if(!yt.isPlaying && ytPlayer.getPlayerState()===1) ytPlayer.pauseVideo();
+  setTimeout(()=> ytSuppressEvent=false, 400);
+}
+
+/* ======================================================================
+   絵しりとり (picture shiritori)
+   ====================================================================== */
+document.getElementById('gameBtn').addEventListener('click', async ()=>{
+  document.getElementById('shiritoriOverlay').classList.add('show');
+  await ensureShiritoriInit();
+});
+document.getElementById('shrCloseBtn').addEventListener('click', ()=> document.getElementById('shiritoriOverlay').classList.remove('show'));
+
+const SHR_COLORS = ["#0d3b4a","#12a8c9","#4bc46a","#ff8a7a","#ffb648","#8a6fff"];
+let shrColor = SHR_COLORS[0], shrWidth = 5;
+(function buildShrColors(){
+  const wrap = document.getElementById('shrColors');
+  SHR_COLORS.forEach(c=>{
+    const b = document.createElement('button'); b.style.background=c;
+    b.addEventListener('click', ()=>{ shrColor=c; });
+    wrap.appendChild(b);
+  });
+})();
+document.getElementById('shrWidth').addEventListener('input', e=> shrWidth = parseInt(e.target.value,10));
+
+const shrCanvas = document.getElementById('shrCanvas');
+const shrCtx = shrCanvas.getContext('2d');
+shrCtx.fillStyle = '#fff'; shrCtx.fillRect(0,0,300,300);
+let shrDrawing=false, shrLastX=0, shrLastY=0;
+function shrPos(e){
+  const rect = shrCanvas.getBoundingClientRect();
+  const cx = (e.touches? e.touches[0].clientX : e.clientX) - rect.left;
+  const cy = (e.touches? e.touches[0].clientY : e.clientY) - rect.top;
+  return {x:cx*(300/rect.width), y:cy*(300/rect.height)};
+}
+shrCanvas.addEventListener('pointerdown', e=>{ shrDrawing=true; const p=shrPos(e); shrLastX=p.x; shrLastY=p.y; });
+shrCanvas.addEventListener('pointermove', e=>{
+  if(!shrDrawing) return;
+  const p = shrPos(e);
+  shrCtx.strokeStyle = shrColor; shrCtx.lineWidth = shrWidth; shrCtx.lineCap='round';
+  shrCtx.beginPath(); shrCtx.moveTo(shrLastX,shrLastY); shrCtx.lineTo(p.x,p.y); shrCtx.stroke();
+  shrLastX=p.x; shrLastY=p.y;
+});
+window.addEventListener('pointerup', ()=> shrDrawing=false);
+document.getElementById('shrClearBtn').addEventListener('click', ()=>{ shrCtx.fillStyle='#fff'; shrCtx.fillRect(0,0,300,300); });
+
+function normalizeYomi(s){
+  s = s.trim();
+  const map = {"ぁ":"あ","ぃ":"い","ぅ":"う","ぇ":"え","ぉ":"お","っ":"つ","ゃ":"や","ゅ":"ゆ","ょ":"よ","ー":""};
+  let last = s.slice(-1);
+  if(map[last]!==undefined && map[last]!=="") last = map[last];
+  if(last==="") last = s.slice(-2,-1);
+  return { first: s.charAt(0), last, raw:s };
+}
+async function readShiritori(){ return await getJSON(K_SHIRI(), true, {history:[], turnPid:null, over:false}); }
+async function writeShiritori(s){ return await setJSON(K_SHIRI(), true, s); }
+async function ensureShiritoriInit(){
+  const s = await readShiritori();
+  if(!s.turnPid){ s.turnPid = myId; await writeShiritori(s); }
+  renderShiritori(s);
+}
+async function pollShiritori(){
+  if(!document.getElementById('shiritoriOverlay').classList.contains('show')) return;
+  const s = await readShiritori();
+  renderShiritori(s);
+}
+function renderShiritori(s){
+  const hist = document.getElementById('shrHistory');
+  hist.innerHTML='';
+  (s.history||[]).forEach(h=>{
+    const item = document.createElement('div'); item.className='hitem';
+    item.innerHTML = `<img src="${h.img}"><div class="hy">${escapeHtml(h.yomi)}（${escapeHtml(h.name)}）</div>`;
+    hist.appendChild(item);
+  });
+  const statusEl = document.getElementById('shrStatus');
+  if(s.over){ statusEl.textContent = '「ん」で終了！「最初から」で再挑戦できます。'; }
+  else if(s.turnPid===myId){ statusEl.textContent = 'あなたの番です。絵を描いて読みを入力してください。'; }
+  else { statusEl.textContent = '相手の番です…'; }
+}
+document.getElementById('shrSubmitForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const yomiInput = document.getElementById('shrYomiInput');
+  const yomi = yomiInput.value.trim();
+  if(!yomi) return;
+  const s = await readShiritori();
+  if(s.over){ toast("ゲームは終了しています。最初からどうぞ"); return; }
+  if(s.turnPid && s.turnPid!==myId){ toast("相手の番です"); return; }
+  const hist = s.history||[];
+  if(hist.length){
+    const prevLast = normalizeYomi(hist[hist.length-1].yomi).last;
+    const curFirst = normalizeYomi(yomi).first;
+    if(prevLast !== curFirst){ toast(`前の読み「…${prevLast}」に続く言葉にしてください`); return; }
+  }
+  const img = shrCanvas.toDataURL('image/png', 0.8);
+  hist.push({ img, yomi, name: myProfile.name, pid: myId });
+  s.history = hist.slice(-20);
+  const norm = normalizeYomi(yomi);
+  if(norm.last==='ん'){ s.over = true; } else { s.turnPid = null; /* open turn: whoever draws next */ }
+  yomiInput.value='';
+  shrCtx.fillStyle='#fff'; shrCtx.fillRect(0,0,300,300);
+  await writeShiritori(s);
+  renderShiritori(s);
+});
+document.getElementById('shrRestartBtn').addEventListener('click', async ()=>{
+  await writeShiritori({ history:[], turnPid:null, over:false });
+  shrCtx.fillStyle='#fff'; shrCtx.fillRect(0,0,300,300);
+  toast("最初からスタートします");
+});
+
+/* ======================================================================
+   init
+   ====================================================================== */
+updateMuteButton();
+loadProfile();
+})();
+</script>
+</body>
+</html>
