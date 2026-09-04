@@ -541,9 +541,25 @@ input[type=range]{width:100%;}
 
 <div class="toast glass" id="toast"></div>
 
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <script>
 (function(){
 "use strict";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDyGVOwquXEAHe5vJdc0p5audIepJJCpkY",
+  authDomain: "newchat-6c7e5.firebaseapp.com",
+  databaseURL: "https://newchat-6c7e5-default-rtdb.firebaseio.com",
+  projectId: "newchat-6c7e5",
+  storageBucket: "newchat-6c7e5.firebasestorage.app",
+  messagingSenderId: "543134915435",
+  appId: "1:543134915435:web:3a061e5738ceff23cc0a2e"
+};
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.database();
 /* ======================================================================
    KUIYA CHAT — utilities
    ====================================================================== */
@@ -915,7 +931,7 @@ document.getElementById('roomInput').addEventListener('keydown', e=>{ if(e.key==
 
 async function enterRoom(passphrase){
   if(!myProfile.name){ toast("先にプロフィールで呼び名を設定してください"); document.getElementById('openProfileBtn').click(); return; }
-  if(!passphrase){ toast("合言葉を入れてください"); return; }
+  if(!passphrase){ toast("合言葉に入れてください"); return; }
   room = safeKey(passphrase);
   roomLabel = passphrase;
   await saveMyRoom({ key: room, passphrase, displayName:"", lastVisited: nowTs() });
@@ -928,11 +944,27 @@ async function enterRoom(passphrase){
 
   if(window.Notification && window.Notification.permission==='default'){ window.Notification.requestPermission().catch(()=>{}); }
 
-  await heartbeat();
-  await pollAll();
-  clearInterval(pollTimer); clearInterval(hbTimer);
-  pollTimer = setInterval(pollAll, 2000);
-  hbTimer = setInterval(heartbeat, 8000);
+  document.getElementById('thread').innerHTML = '';
+  lastRenderedIds.clear();
+
+  db.ref('rooms/' + room + '/messages').on('child_added', (snapshot) => {
+    const m = snapshot.val();
+    if (!lastRenderedIds.has(m.id)) {
+      lastRenderedIds.add(m.id);
+      const row = buildMessageRow(m, {}, {});
+      document.getElementById('thread').appendChild(row);
+      document.getElementById('thread').scrollTo({ top: document.getElementById('thread').scrollHeight, behavior: 'smooth' });
+    }
+  });
+
+  const myPresenceRef = db.ref('rooms/' + room + '/presence/' + myId);
+  myPresenceRef.set({ name: myProfile.name, ts: nowTs() });
+  myPresenceRef.onDisconnect().remove();
+
+  db.ref('rooms/' + room + '/presence').on('value', (snapshot) => {
+    const presence = snapshot.val() || {};
+    renderPresence(presence);
+  });
 }
 document.getElementById('backToEntryBtn').addEventListener('click', ()=>{
   clearInterval(pollTimer); clearInterval(hbTimer); clearInterval(typingPollTimer);
@@ -1024,15 +1056,7 @@ async function clearMyTyping(){
    messages: send / render / edit / delete / react / read
    ====================================================================== */
 async function pushMessage(msg){
-  const state = await readState();
-  state.messages = state.messages || [];
-  state.messages.push(msg);
-  if(state.messages.length>250) state.messages = state.messages.slice(-250);
-  state.presence = state.presence || {};
-  state.presence[myId] = { name: myProfile.name, ts: nowTs(), avatar: myProfile.avatar, frame: myProfile.frame };
-  const ok = await writeState(state);
-  if(!ok) toast("送信に失敗しました（容量オーバーの可能性）");
-  else await renderMessages(state.messages, state.presence);
+  db.ref('rooms/' + room + '/messages').push(msg);
 }
 
 document.getElementById('composerForm').addEventListener('submit', async e=>{
