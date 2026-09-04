@@ -459,7 +459,13 @@ input[type=range]{width:100%;}
       <label style="margin-top:8px; display:block;">太さ: <span id="frameWidthLabel">2px</span></label>
       <input type="range" id="frameWidthInput" min="0" max="6" value="2">
     </div>
+    <div class="field">
+      <label for="profileSyncCodeInput">端末をまたぐ合言葉（任意）</label>
+      <input id="profileSyncCodeInput" type="text" maxlength="30" placeholder="例: まこの合言葉2026">
+      <div class="hint">これを設定して保存すると、名前・アイコン・マイルームを他のPCでも同じ合言葉で呼び出せます。忘れないメモしやすい言葉にしてください。</div>
+    </div>
     <div class="modal-actions">
+      <button class="btn btn-ghost" id="pullProfileBtn" style="flex:1;">この合言葉で呼び出す</button>
       <button class="btn btn-glossy" id="saveProfileBtn" style="flex:1;">保存する</button>
     </div>
   </div>
@@ -563,7 +569,7 @@ input[type=range]{width:100%;}
    KUIYA CHAT — utilities
    ====================================================================== */
 const myId = crypto.randomUUID();
-let myProfile = { name:"", avatar:null, frame:{color:"#12a8c9", width:2} };
+let myProfile = { name:"", avatar:null, frame:{color:"#12a8c9", width:2}, syncCode:"" };
 let room = "";
 let roomLabel = "";
 
@@ -677,6 +683,11 @@ function localSet(key, value){
   }
 }
 
+function fbSafeKey(key){
+  // Firebaseのキーには . # $ [ ] が使えないため置換する
+  return String(key).replace(/[.#$\[\]]/g, '_');
+}
+
 async function getJSON(key, shared, fallback){
   try{
     if(typeof window.storage?.get === "function"){
@@ -684,7 +695,20 @@ async function getJSON(key, shared, fallback){
       if(r && r.value !== undefined) return JSON.parse(r.value);
     }
   }catch(e){
-    console.warn("window.storage get failed; using browser storage", key, e);
+    console.warn("window.storage get failed; trying other storage", key, e);
+  }
+
+  // 部屋で共有すべきデータ（通話・タイピング中・ゲーム等）は
+  // 端末をまたいで届くよう Firebase Realtime Database を使う。
+  // ここで localStorage に頼ると、他の端末には一切届かなくなる。
+  if(shared && room){
+    try{
+      const snap = await db.ref('roomkv/' + fbSafeKey(key)).once('value');
+      const v = snap.val();
+      return (v === null || v === undefined) ? fallback : v;
+    }catch(e){
+      console.warn("Firebase(shared) get failed; using local fallback", key, e);
+    }
   }
 
   if(String(key).startsWith("media:")){
@@ -703,7 +727,16 @@ async function setJSON(key, shared, value){
       return true;
     }
   }catch(e){
-    console.warn("window.storage set failed; using browser storage", key, e);
+    console.warn("window.storage set failed; trying other storage", key, e);
+  }
+
+  if(shared && room){
+    try{
+      await db.ref('roomkv/' + fbSafeKey(key)).set(value === undefined ? null : value);
+      return true;
+    }catch(e){
+      console.warn("Firebase(shared) set failed; using local fallback", key, e);
+    }
   }
 
   if(String(key).startsWith("media:")){
@@ -822,12 +855,45 @@ function openCropper(file, shape, outW, outH){
    ====================================================================== */
 async function loadProfile(){
   const p = await getJSON('profile', false, null);
-  if(p) myProfile = p;
+  if(p) myProfile = Object.assign({ syncCode:"" }, p);
   renderProfileUI();
 }
 async function saveProfile(){
   await setJSON('profile', false, myProfile);
   renderProfileUI();
+}
+// 「端末をまたぐ合言葉」が設定されていれば、プロフィールとマイルームを
+// Firebaseにも保存する（部屋の合言葉と同じ発想の、ログイン不要の同期）。
+async function pushProfileToCloud(){
+  const code = (myProfile.syncCode||"").trim();
+  if(!code) return;
+  const rooms = await getMyRooms();
+  try{
+    await db.ref('identities/' + safeKey(code)).set({ profile: myProfile, rooms, updatedAt: nowTs() });
+  }catch(e){
+    console.warn("プロフィールのクラウド保存に失敗", e);
+    toast("端末間同期の保存に失敗しました（通信をご確認ください）");
+  }
+}
+// 別の端末で同じ合言葉を入力した際、そちらのプロフィールとマイルームを呼び出す。
+async function pullProfileFromCloud(code){
+  code = (code||"").trim();
+  if(!code){ toast("合言葉を入力してください"); return; }
+  try{
+    const snap = await db.ref('identities/' + safeKey(code)).once('value');
+    const data = snap.val();
+    if(!data || !data.profile){ toast("その合言葉のプロフィールは見つかりませんでした"); return; }
+    myProfile = Object.assign({ syncCode: code }, data.profile, { syncCode: code });
+    await setJSON('profile', false, myProfile);
+    await setJSON('myRooms', false, data.rooms || []);
+    renderProfileUI();
+    renderSavedRooms();
+    document.getElementById('openProfileBtn').click();
+    toast("他の端末のプロフィールを呼び出しました");
+  }catch(e){
+    console.warn("プロフィールのクラウド呼び出しに失敗", e);
+    toast("呼び出しに失敗しました（通信をご確認ください）");
+  }
 }
 function renderProfileUI(){
   document.getElementById('entryAvatar').outerHTML = avatarHtml(myProfile.name, myProfile.avatar, myProfile.frame, 52).replace('class="avatar"','class="avatar" id="entryAvatar"');
@@ -839,6 +905,7 @@ document.getElementById('openProfileBtn').addEventListener('click', ()=>{
   buildFrameSwatches();
   document.getElementById('frameWidthInput').value = myProfile.frame.width;
   document.getElementById('frameWidthLabel').textContent = myProfile.frame.width+'px';
+  document.getElementById('profileSyncCodeInput').value = myProfile.syncCode || "";
   openModal('profileModal');
 });
 const FRAME_COLORS = ["#12a8c9","#4bc46a","#ffb648","#ff6f6f","#8a6fff","#ff6fb0","#2b2b2b","#ffffff"];
@@ -872,9 +939,14 @@ document.getElementById('saveProfileBtn').addEventListener('click', async ()=>{
   const n = document.getElementById('profileNameInput').value.trim();
   if(!n){ toast("呼び名を入れてください"); return; }
   myProfile.name = n.slice(0,16);
+  myProfile.syncCode = document.getElementById('profileSyncCodeInput').value.trim().slice(0,30);
   await saveProfile();
+  await pushProfileToCloud();
   closeModal('profileModal');
-  toast("プロフィールを保存しました");
+  toast(myProfile.syncCode ? "プロフィールを保存しました（この端末で呼び出せます）" : "プロフィールを保存しました");
+});
+document.getElementById('pullProfileBtn').addEventListener('click', async ()=>{
+  await pullProfileFromCloud(document.getElementById('profileSyncCodeInput').value);
 });
 
 /* ======================================================================
@@ -964,6 +1036,15 @@ async function enterRoom(passphrase){
     const presence = snapshot.val() || {};
     renderPresence(presence);
   });
+
+  // 通話のシグナリング／タイピング中表示／YouTube Party／絵しりとりなど
+  // 部屋内の共有データを定期的にチェックする処理を開始する。
+  // （以前はこの起動処理自体が抜けており、通話が誰にも繋がらない原因になっていた）
+  clearInterval(pollTimer); clearInterval(hbTimer);
+  heartbeat();
+  pollAll();
+  hbTimer = setInterval(heartbeat, 4000);
+  pollTimer = setInterval(pollAll, 1200);
 }
 document.getElementById('backToEntryBtn').addEventListener('click', ()=>{
   clearInterval(pollTimer); clearInterval(hbTimer); clearInterval(typingPollTimer);
@@ -1585,7 +1666,16 @@ document.getElementById('roomTitle').addEventListener('click', ()=> document.get
 /* ======================================================================
    CALL SYSTEM (mesh, joinable anytime)
    ====================================================================== */
-const ICE_SERVERS = [{urls:'stun:stun.l.google.com:19302'}];
+const ICE_SERVERS = [
+  {urls:'stun:stun.l.google.com:19302'},
+  // 学校や外出先など、お互いが厳しめのネットワーク環境にいる場合に
+  // 直接通信できないケースがあるため、中継してくれるTURNサーバーも追加。
+  // これはテスト・小規模利用向けの無料公開TURNサーバー（OpenRelay Project）。
+  // 本格運用する場合は自分専用のTURNサーバーの利用を推奨。
+  {urls:'turn:openrelay.metered.ca:80', username:'openrelayproject', credential:'openrelayproject'},
+  {urls:'turn:openrelay.metered.ca:443', username:'openrelayproject', credential:'openrelayproject'},
+  {urls:'turn:openrelay.metered.ca:443?transport=tcp', username:'openrelayproject', credential:'openrelayproject'}
+];
 let callSessionId = null;
 let callKind = 'audio';
 let inCall = false;
@@ -1676,9 +1766,7 @@ async function joinCallSession(){
   // 部屋にすでにいる既存の参加者全員へ接続Offerを送信
   Object.keys(call.participants).forEach(targetPid => {
     if (targetPid !== myId && (!pcMap[targetPid] || pcMap[targetPid].pc.connectionState === 'closed')) {
-      if (typeof createPeerConnection === 'function') {
-        createPeerConnection(targetPid, true);
-      }
+      callToPeer(targetPid);
     }
   });
 
@@ -1712,7 +1800,6 @@ async function pollCallSession(){
 }
 async function callToPeer(peerId){
   const entry = ensurePeerConnection(peerId);
-  localStream.getTracks().forEach(tr=> entry.pc.addTrack(tr, localStream));
   const offer = await entry.pc.createOffer();
   await entry.pc.setLocalDescription(offer);
   await sendSignal('offer', peerId, { sdp: entry.pc.localDescription, kind: callKind, name: myProfile.name });
