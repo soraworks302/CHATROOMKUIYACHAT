@@ -1474,20 +1474,28 @@ async function sendMedia(type, fileOrBlob){
   const size = fileOrBlob.size || 0;
   if(size > MAX_MEDIA_BYTES){ toast("ファイルサイズが大きすぎます（最大200MB）"); return; }
 
-toast("アップロード中…");
+  toast("アップロード中…");
   try {
     // Blob/FileのMIMEタイプ（.type）を優先し、空の場合のみデフォルトを判定
     const contentType = (fileOrBlob.type && fileOrBlob.type !== '') 
       ? fileOrBlob.type 
-      : (type==='image' ? 'image/jpeg'
-        : type==='video' ? 'video/mp4'
-        : (type==='audio' || type==='voice') ? 'audio/mpeg'
-        : type==='gif' ? 'image/gif'
+      : (type === 'image' ? 'image/jpeg'
+        : type === 'video' ? 'video/mp4'
+        : type === 'voice' ? 'audio/webm'
+        : type === 'audio' ? 'audio/mpeg'
+        : type === 'gif' ? 'image/gif'
         : 'application/octet-stream');
 
     const existingName = (fileOrBlob instanceof File && fileOrBlob.name) ? fileOrBlob.name : null;
     const extFromName = existingName && existingName.includes('.') ? existingName.split('.').pop() : null;
-    const ext = extFromName || (type === 'image' ? 'jpg' : (type === 'audio' || type === 'voice') ? 'mp3' : type === 'gif' ? 'gif' : type === 'video' ? 'mp4' : 'bin');
+    
+    const defaultExt = type === 'image' ? 'jpg' 
+      : type === 'video' ? 'mp4' 
+      : type === 'voice' ? 'webm' 
+      : type === 'gif' ? 'gif' 
+      : 'mp3';
+
+    const ext = extFromName || defaultExt;
     const fileName = existingName || `upload_${Date.now()}.${ext}`;
 
     // 正しいMIMEタイプと拡張子でFileオブジェクトを作成してアップロード
