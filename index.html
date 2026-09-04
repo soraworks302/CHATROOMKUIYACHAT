@@ -1474,25 +1474,23 @@ async function sendMedia(type, fileOrBlob){
   const size = fileOrBlob.size || 0;
   if(size > MAX_MEDIA_BYTES){ toast("ファイルサイズが大きすぎます（最大200MB）"); return; }
 
-  toast("アップロード中…");
+toast("アップロード中…");
   try {
-    // Blob/FileのMIMEタイプ（.type）をそのまま引き継ぐ。ここが空になると
-    // Pixeldrain側で「種類不明のファイル」として保存され、<img>/<video>タグで
-    // 表示できなくなる（＝「アップロードはできたのに見れない」の直接原因）。
-    let contentType = fileOrBlob.type;
-    if(!contentType){
-      contentType = type==='image' ? 'image/jpeg'
+    // Blob/FileのMIMEタイプ（.type）を優先し、空の場合のみデフォルトを判定
+    const contentType = (fileOrBlob.type && fileOrBlob.type !== '') 
+      ? fileOrBlob.type 
+      : (type==='image' ? 'image/jpeg'
         : type==='video' ? 'video/mp4'
-        : (type==='audio' || type==='voice') ? 'audio/webm'
+        : (type==='audio' || type==='voice') ? 'audio/mpeg'
         : type==='gif' ? 'image/gif'
-        : 'application/octet-stream';
-    }
+        : 'application/octet-stream');
+
     const existingName = (fileOrBlob instanceof File && fileOrBlob.name) ? fileOrBlob.name : null;
     const extFromName = existingName && existingName.includes('.') ? existingName.split('.').pop() : null;
-    const ext = extFromName || (type === 'image' ? 'jpg' : type === 'voice' ? 'webm' : type === 'gif' ? 'gif' : type === 'video' ? 'mp4' : 'bin');
+    const ext = extFromName || (type === 'image' ? 'jpg' : (type === 'audio' || type === 'voice') ? 'mp3' : type === 'gif' ? 'gif' : type === 'video' ? 'mp4' : 'bin');
     const fileName = existingName || `upload_${Date.now()}.${ext}`;
 
-    // 必ずMIMEタイプ付きのFileとして渡す（Blobのまま/typeなしFileで送ると再現するバグ）
+    // 正しいMIMEタイプと拡張子でFileオブジェクトを作成してアップロード
     const uploadFile = new File([fileOrBlob], fileName, { type: contentType });
 
     const mediaUrl = await uploadToPixeldrain(uploadFile);
