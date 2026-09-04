@@ -1199,7 +1199,8 @@ function buildMessageRow(m, presence, readTimes){
     } else if(m.type === 'video'){
       bubble.innerHTML = `<video src="${src}" controls style="max-width:100%; border-radius:12px;"></video>`;
     } else if(m.type === 'audio' || m.type === 'voice'){
-      bubble.innerHTML = `<audio src="${src}" controls style="width:100%;"></audio>`;
+      // ★潰れ防止のため幅を固定（220px）指定に変更
+      bubble.innerHTML = `<audio src="${src}" controls style="width: 220px; max-width: 100%; display: block; margin: 4px 0;"></audio>`;
     } else {
       bubble.innerHTML = `<a href="${src}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">ファイルを開く</a>`;
     }
