@@ -1055,7 +1055,7 @@ async function clearMyTyping(){
 /* ======================================================================
    messages: send / render / edit / delete / react / read
    ====================================================================== */
-// Catbox.moe への大容量ファイル（最大200MB）アップロード関数
+// Catbox.moe への大容量ファイル（最大200MB）アップロード関数（CORS回避版）
 async function uploadToCatbox(file) {
   const formData = new FormData();
   formData.append('reqtype', 'fileupload');
@@ -1072,6 +1072,7 @@ async function uploadToCatbox(file) {
   const fileUrl = (await response.text()).trim();
   return fileUrl;
 }
+
 async function pushMessage(msg){
   db.ref('rooms/' + room + '/messages').push(msg);
 }
