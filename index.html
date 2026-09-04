@@ -296,12 +296,14 @@ input[type=range]{width:100%;}
 }
 </style>
 <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1.29.1/index.js"></script>
-<!-- Firebaseの追加（ここから） -->
+
+<!-- Firebase SDK (compat版) -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
 
 <script>
+  // 1. Firebase初期化設定
   const firebaseConfig = {
     apiKey: "AIzaSyDyGVOwquXEAHe5vJdc0p5audIepJJCpkY",
     authDomain: "newchat-6c7e5.firebaseapp.com",
@@ -315,6 +317,57 @@ input[type=range]{width:100%;}
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
   const storage = firebase.storage();
+
+  let currentRoomKey = "";
+
+  // 2. 画面操作・イベント設定
+  document.addEventListener('DOMContentLoaded', () => {
+    const joinBtn = document.querySelector('.btn-glossy'); // 「部屋に入る」ボタン
+    const roomInput = document.querySelector('.field input'); // 合言葉入力欄
+    const entryScreen = document.getElementById('entryScreen');
+    const chatScreen = document.getElementById('chatScreen');
+    const roomTitle = document.querySelector('header.bar h2');
+
+    if (joinBtn) {
+      joinBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const roomKey = roomInput ? roomInput.value.trim() : '';
+
+        if (!roomKey) {
+          alert('合言葉を入力してください');
+          return;
+        }
+
+        currentRoomKey = roomKey;
+
+        // ヘッダーに入力した合言葉を反映
+        if (roomTitle) {
+          roomTitle.childNodes[0].textContent = roomKey + ' ';
+        }
+
+        // 入力画面を非表示にし、チャット画面を表示
+        if (entryScreen && chatScreen) {
+          entryScreen.classList.add('hidden');
+          chatScreen.classList.remove('hidden');
+        }
+
+        // 指定した部屋のメッセージ取得を開始
+        listenToRoomMessages(roomKey);
+      });
+    }
+  });
+
+  // 3. Firebaseからメッセージデータを受信する処理
+  function listenToRoomMessages(roomKey) {
+    const messagesRef = db.ref('rooms/' + roomKey + '/messages');
+    messagesRef.off(); // 二重取得を防止
+
+    messagesRef.on('child_added', (snapshot) => {
+      const msg = snapshot.val();
+      console.log('新着メッセージ受信:', msg);
+      // メッセージ送信機能実装時にここへ画面描画処理を追加します
+    });
+  }
 </script>
 <!-- Firebaseの追加（ここまで） -->
 </head>
