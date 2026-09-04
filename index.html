@@ -1140,7 +1140,7 @@ async function renderMessages(messages, presence, readTimes){
 function notify(name, body){
   try{
     if(window.Notification && Notification.permission==='granted'){
-      new Notification(`${name}　${body}`.slice(0,120));
+      new Notification(`${name} ${body}`.slice(0,120));
     }
   }catch(e){}
 }
@@ -1189,17 +1189,15 @@ function buildMessageRow(m, presence, readTimes){
       }
     };
     bubble.appendChild(img);
- } else if(m.type==='sticker'){
+  } else if(m.type==='sticker'){
     bubble.innerHTML = `<img class="sticker-img" src="${m.dataURL}" alt="sticker">`;
   } else if(m.mediaUrl || m.url){
-    // Catboxなどの直URLがある場合は直接再生・表示
     const src = m.mediaUrl || m.url;
     if(m.type === 'image'){
       bubble.innerHTML = `<img src="${src}" style="max-width:100%; border-radius:12px;" loading="lazy">`;
     } else if(m.type === 'video'){
       bubble.innerHTML = `<video src="${src}" controls style="max-width:100%; border-radius:12px;"></video>`;
     } else if(m.type === 'audio' || m.type === 'voice'){
-      // 吹き出し幅を強制確保して潰れを防止
       bubble.style.minWidth = '240px';
       bubble.innerHTML = `<audio src="${src}" controls style="width: 100%; display: block;"></audio>`;
     } else {
@@ -1246,10 +1244,6 @@ function buildMessageRow(m, presence, readTimes){
       col.appendChild(tag);
     }
   }
-
-  row.appendChild(col);
-  return row;
-}
 
   row.appendChild(col);
   return row;
