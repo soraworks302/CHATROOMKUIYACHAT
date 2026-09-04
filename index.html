@@ -1055,22 +1055,32 @@ async function clearMyTyping(){
 /* ======================================================================
    messages: send / render / edit / delete / react / read
    ====================================================================== */
-// Catbox.moe への大容量ファイル（最大200MB）アップロード関数（CORS回避版）
+async function clearMyTyping(){
+  const t = await getJSON(K_TYPING(), true, {});
+  delete t[myId];
+  await setJSON(K_TYPING(), true, t);
+}
+
+/* ======================================================================
+   messages: send / render / edit / delete / react / read
+   ====================================================================== */
+// CORS制限なしで直接送信できるファイルアップロード処理（tmpfiles.org経由）
 async function uploadToCatbox(file) {
   const formData = new FormData();
-  formData.append('reqtype', 'fileupload');
-  formData.append('fileToUpload', file);
+  formData.append('file', file);
 
-  // CORS制限を回避して送信
-  const response = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://catbox.moe/user/api.php'), {
+  const response = await fetch('https://tmpfiles.org/api/v1/upload', {
     method: 'POST',
     body: formData
   });
 
   if (!response.ok) throw new Error('アップロードに失敗しました');
 
-  const fileUrl = (await response.text()).trim();
-  return fileUrl;
+  const json = await response.json();
+  if (json.status !== 'success') throw new Error('アップロードに失敗しました');
+
+  // 直リンク（画像/動画の直接表示・再生用URL）に変換して返す
+  return json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
 }
 
 async function pushMessage(msg){
