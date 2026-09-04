@@ -287,12 +287,13 @@ input[type=range]{width:100%;}
   .tile{width:44vw;}
   .msg-row{max-width:92%;}
 }
-/* 既存のスタイルの最後（ </style> の直前 ）に追加 */
-    .call-tile.speaking, .avatar.speaking {
-      box-shadow: 0 0 0 3px #00e676, 0 0 15px rgba(0, 230, 118, 0.8) !important;
-      border-color: #00e676 !important;
-      transition: box-shadow 0.1s ease;
-    }  
+
+/* 発言時の発光用スタイル */
+.call-tile.speaking, .avatar.speaking {
+  box-shadow: 0 0 0 3px #00e676, 0 0 15px rgba(0, 230, 118, 0.8) !important;
+  border-color: #00e676 !important;
+  transition: box-shadow 0.1s ease;
+}
 </style>
 <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1.29.1/index.js"></script>
 <!-- Firebaseの追加（ここから） -->
