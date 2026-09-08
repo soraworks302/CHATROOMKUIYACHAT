@@ -294,6 +294,40 @@ input[type=range]{width:100%;}
   border-color: #00e676 !important;
   transition: box-shadow 0.1s ease;
 }
+
+/* ================= THEME SWITCHER ================= */
+body.theme-backrooms{--sky-top:#b8a77c;--sky-mid:#8f805f;--sky-low:#6f654e;--aqua:#c9b98c;--aqua-deep:#8e7d55;--aqua-ink:#4e432d;--leaf:#9b956d;--leaf-deep:#716b4b;--sun:#d2b66d;--coral:#a77c58;--glass:rgba(213,202,164,.42);--glass-strong:rgba(226,216,181,.70);--ink:#302b20;--ink-dim:#625844;--ink-faint:#8b7e63}
+body.theme-backrooms{background:radial-gradient(70% 60% at 50% 20%,#d7ca9c,transparent 70%),linear-gradient(180deg,var(--sky-top),var(--sky-mid) 55%,var(--sky-low))}
+body.theme-dreamcore{--sky-top:#f7dff2;--sky-mid:#d9d7fa;--sky-low:#bce9ed;--aqua:#a7dff0;--aqua-deep:#9b8de0;--aqua-ink:#5e5790;--leaf:#b8e8c0;--leaf-deep:#7fc69c;--sun:#ffe59a;--coral:#e6a7c7;--glass:rgba(255,255,255,.48);--glass-strong:rgba(255,255,255,.78);--ink:#514b69;--ink-dim:#77718d;--ink-faint:#a29bb5}
+body.theme-dreamcore{background:radial-gradient(25% 30% at 15% 20%,#fff,transparent 70%),radial-gradient(30% 35% at 85% 70%,#e7c8ff,transparent 70%),linear-gradient(135deg,#f8dff0,#d9d7fa 48%,#bce9ed)}
+body.theme-mallcore{--sky-top:#f5e8dc;--sky-mid:#e6d7c8;--sky-low:#c9d8d0;--aqua:#b6c9c4;--aqua-deep:#6f9991;--aqua-ink:#425d58;--leaf:#b8c99f;--leaf-deep:#7d9b69;--sun:#e5c681;--coral:#cf9d8e;--glass:rgba(255,255,255,.54);--glass-strong:rgba(255,255,255,.82);--ink:#4b504c;--ink-dim:#747a75;--ink-faint:#9a9f9b}
+body.theme-mallcore{background:linear-gradient(90deg,rgba(255,255,255,.28) 0 2px,transparent 2px 120px),linear-gradient(180deg,#f3e7dc,#ddd5cb 50%,#c6d3cb)}
+body.theme-liminal{--sky-top:#d8dcd8;--sky-mid:#bfc5c2;--sky-low:#969f9c;--aqua:#b9c4c0;--aqua-deep:#687d78;--aqua-ink:#394c48;--leaf:#aab8a8;--leaf-deep:#6f866f;--sun:#c8b98c;--coral:#a98279;--glass:rgba(242,244,240,.40);--glass-strong:rgba(250,250,247,.68);--ink:#39413f;--ink-dim:#68716e;--ink-faint:#8e9793}
+body.theme-liminal{background:radial-gradient(80% 70% at 50% 10%,rgba(255,255,255,.45),transparent 65%),linear-gradient(180deg,#dfe2de,#bfc5c2 52%,#8e9793)}
+body.theme-y2k{--sky-top:#f4f8ff;--sky-mid:#cfe8ff;--sky-low:#b8d4ff;--aqua:#72d8ff;--aqua-deep:#268bd2;--aqua-ink:#16548a;--leaf:#8de6c1;--leaf-deep:#35b98a;--sun:#fff16b;--coral:#ff7ab5;--glass:rgba(255,255,255,.60);--glass-strong:rgba(255,255,255,.86);--ink:#163d62;--ink-dim:#52738f;--ink-faint:#7f9db5}
+body.theme-y2k{background:repeating-linear-gradient(135deg,rgba(255,255,255,.16) 0 2px,transparent 2px 10px),linear-gradient(180deg,#f5f9ff,#cce7ff 55%,#b8d2ff)}
+body.theme-webcore{--sky-top:#fff7b8;--sky-mid:#bdefff;--sky-low:#c8ffcf;--aqua:#5ed8ff;--aqua-deep:#087cc2;--aqua-ink:#064f7e;--leaf:#72e08a;--leaf-deep:#26964a;--sun:#ffe600;--coral:#ff4f8b;--glass:rgba(255,255,255,.58);--glass-strong:rgba(255,255,255,.84);--ink:#183d4c;--ink-dim:#4d6f7d;--ink-faint:#78929d}
+body.theme-webcore{background:repeating-linear-gradient(0deg,rgba(0,80,130,.06) 0 1px,transparent 1px 4px),linear-gradient(135deg,#fff5a8,#bdefff 52%,#c5ffd0)}
+body.theme-brutalism{--sky-top:#f4f4f4;--sky-mid:#dedede;--sky-low:#bdbdbd;--aqua:#f1f1f1;--aqua-deep:#111;--aqua-ink:#111;--leaf:#d5d5d5;--leaf-deep:#333;--sun:#ffdf00;--coral:#ff4b35;--glass:#f4f4f4;--glass-strong:#fff;--ink:#111;--ink-dim:#444;--ink-faint:#777;--r-lg:4px;--r-md:2px;--r-pill:2px}
+body.theme-brutalism{background:linear-gradient(90deg,transparent 0 49%,rgba(0,0,0,.08) 49% 51%,transparent 51%),linear-gradient(180deg,#f7f7f7,#d7d7d7)}
+body.theme-brutalism .glass{backdrop-filter:none;-webkit-backdrop-filter:none;border:2px solid #111;box-shadow:5px 5px 0 #111;border-radius:var(--r-lg)}
+body.theme-brutalism .btn-glossy,body.theme-brutalism .send-btn{background:#111;color:#fff;box-shadow:4px 4px 0 #777;border-radius:2px}
+body.theme-roblox{--sky-top:#e9f7ff;--sky-mid:#c8ebff;--sky-low:#b8e1f5;--aqua:#58bdf0;--aqua-deep:#2d78d4;--aqua-ink:#184f96;--leaf:#71d16c;--leaf-deep:#3e9c3a;--sun:#ffd84a;--coral:#f36c62;--glass:rgba(255,255,255,.72);--glass-strong:rgba(255,255,255,.92);--ink:#193b5c;--ink-dim:#5c7892;--ink-faint:#8aa0b4;--r-lg:12px;--r-md:8px;--r-pill:10px}
+body.theme-roblox{background:linear-gradient(180deg,#dff4ff,#bfe5fb 58%,#a8d4ed)}
+body.theme-roblox .glass{border:2px solid rgba(50,100,150,.20);box-shadow:0 6px 0 rgba(40,80,120,.16),0 10px 25px rgba(30,80,120,.12)}
+body.theme-lego{--sky-top:#eaf7ff;--sky-mid:#c8ecff;--sky-low:#bfe8bd;--aqua:#56c8ed;--aqua-deep:#1788c5;--aqua-ink:#07557d;--leaf:#74cf65;--leaf-deep:#3b9e35;--sun:#ffd43b;--coral:#f05d50;--glass:rgba(255,255,255,.70);--glass-strong:rgba(255,255,255,.92);--ink:#183e58;--ink-dim:#58758b;--ink-faint:#8299a9;--r-lg:18px;--r-md:10px}
+body.theme-lego{background:linear-gradient(180deg,#dff5ff,#c9ebff 55%,#bfe4bb)}
+body.theme-lego .glass{box-shadow:0 8px 0 rgba(20,90,130,.10),0 12px 25px rgba(20,90,130,.12)}
+body.theme-minecraft{--sky-top:#a9d8ff;--sky-mid:#73b7df;--sky-low:#78b85b;--aqua:#79c9ec;--aqua-deep:#357fa7;--aqua-ink:#214e67;--leaf:#8bcf63;--leaf-deep:#4d913a;--sun:#f2cf5b;--coral:#b96858;--glass:rgba(224,241,218,.55);--glass-strong:rgba(242,250,232,.78);--ink:#294332;--ink-dim:#55705d;--ink-faint:#7c9182;--r-lg:8px;--r-md:4px;--r-pill:4px}
+body.theme-minecraft{background:linear-gradient(180deg,#a9d8ff 0 56%,#7eb45f 56% 100%)}
+body.theme-minecraft .glass{backdrop-filter:none;-webkit-backdrop-filter:none;border:2px solid rgba(65,95,55,.28);box-shadow:4px 4px 0 rgba(40,65,35,.18)}
+body.theme-minecraft .bg-orb{filter:none;opacity:.22}
+body.theme-frutiger{--r-lg:26px;--r-md:16px;--r-pill:999px}
+.theme-options{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
+.theme-option{border:1px solid rgba(255,255,255,.85);background:rgba(255,255,255,.55);border-radius:14px;padding:10px 8px;cursor:pointer;color:var(--ink);font:700 .82rem inherit;text-align:left}
+.theme-option.active{border:2px solid var(--aqua-deep);background:rgba(255,255,255,.82)}
+.theme-dot{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:-2px;margin-right:6px;background:var(--dot,#4fd1e8);box-shadow:inset 0 1px 2px #fff}
+
 </style>
 <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1.29.1/index.js"></script>
 
@@ -352,6 +386,7 @@ input[type=range]{width:100%;}
       <div class="tab active" data-tab="new">合言葉で入る</div>
       <div class="tab" data-tab="saved">マイルーム</div>
     </div>
+    <button class="btn btn-ghost" id="themeEntryBtn" style="width:100%; margin-bottom:12px;">🎨 テーマを変更</button>
 
     <div id="tabNew">
       <div class="field">
@@ -481,6 +516,11 @@ input[type=range]{width:100%;}
       <input id="roomNameInput" type="text" maxlength="24" placeholder="例: いつものメンバー">
     </div>
     <div class="field">
+      <label>サイトテーマ</label>
+      <button class="btn btn-ghost" id="themeRoomBtn" style="width:100%;">🎨 テーマを変更</button>
+      <div class="hint">テーマはこの端末全体に保存されます。</div>
+    </div>
+    <div class="field">
       <label>背景画像</label>
       <button class="btn btn-ghost" id="bgUploadBtn" style="width:100%;">背景を選んで調整する</button>
       <input type="file" id="bgFileInput" accept="image/*" class="hidden">
@@ -489,6 +529,28 @@ input[type=range]{width:100%;}
     <div class="modal-actions">
       <button class="btn btn-ghost" id="bgClearBtn" style="flex:1;">背景を解除</button>
       <button class="btn btn-glossy" id="saveRoomSettingsBtn" style="flex:1;">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ theme modal ============ -->
+<div class="modal-layer" id="themeModal">
+  <div class="glass modal-card">
+    <button class="close-x" data-close="themeModal">✕</button>
+    <h3>サイトテーマ</h3>
+    <p class="msub">KUIYA CHAT 全体の見た目を切り替えます。</p>
+    <div class="theme-options" id="themeOptions">
+      <button class="theme-option" data-theme="frutiger"><span class="theme-dot" style="--dot:#4fd1e8"></span>Frutiger Aero</button>
+      <button class="theme-option" data-theme="backrooms"><span class="theme-dot" style="--dot:#9c8b61"></span>The Backrooms</button>
+      <button class="theme-option" data-theme="dreamcore"><span class="theme-dot" style="--dot:#c7a6e8"></span>Dreamcore</button>
+      <button class="theme-option" data-theme="mallcore"><span class="theme-dot" style="--dot:#a8b8aa"></span>Mallcore</button>
+      <button class="theme-option" data-theme="liminal"><span class="theme-dot" style="--dot:#9ca7a3"></span>Liminal Space</button>
+      <button class="theme-option" data-theme="y2k"><span class="theme-dot" style="--dot:#5ecbff"></span>Y2K</button>
+      <button class="theme-option" data-theme="webcore"><span class="theme-dot" style="--dot:#65dfff"></span>Webcore</button>
+      <button class="theme-option" data-theme="brutalism"><span class="theme-dot" style="--dot:#222"></span>Brutalism</button>
+      <button class="theme-option" data-theme="roblox"><span class="theme-dot" style="--dot:#3f8edc"></span>Roblox-like</button>
+      <button class="theme-option" data-theme="lego"><span class="theme-dot" style="--dot:#f2c938"></span>Lego-like</button>
+      <button class="theme-option" data-theme="minecraft"><span class="theme-dot" style="--dot:#6da95b"></span>Minecraft-like</button>
     </div>
   </div>
 </div>
@@ -954,6 +1016,30 @@ document.getElementById('pullProfileBtn').addEventListener('click', async ()=>{
    ====================================================================== */
 function openModal(id){ document.getElementById(id).classList.add('show'); }
 function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+/* site theme: only visual theme is persisted */
+const THEME_KEY = 'kuiya:theme';
+const THEME_NAMES = ['frutiger','backrooms','dreamcore','mallcore','liminal','y2k','webcore','brutalism','roblox','lego','minecraft'];
+
+function applyTheme(theme){
+  if(!THEME_NAMES.includes(theme)) theme='frutiger';
+  document.body.classList.remove(...THEME_NAMES.map(t=>'theme-'+t));
+  document.body.classList.add('theme-'+theme);
+  try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
+  document.querySelectorAll('.theme-option').forEach(b=>b.classList.toggle('active', b.dataset.theme===theme));
+}
+function loadTheme(){
+  let theme='frutiger';
+  try{ theme=localStorage.getItem(THEME_KEY)||'frutiger'; }catch(e){}
+  applyTheme(theme);
+}
+function openThemeModal(){ loadTheme(); openModal('themeModal'); }
+document.getElementById('themeEntryBtn').addEventListener('click', openThemeModal);
+document.getElementById('themeRoomBtn').addEventListener('click', openThemeModal);
+document.querySelectorAll('.theme-option').forEach(b=>b.addEventListener('click', ()=>{
+  applyTheme(b.dataset.theme);
+  toast('テーマを変更しました');
+}));
+
 document.querySelectorAll('[data-close]').forEach(b=> b.addEventListener('click', ()=> closeModal(b.dataset.close)));
 
 /* ======================================================================
@@ -2219,6 +2305,7 @@ document.getElementById('shrRestartBtn').addEventListener('click', async ()=>{
 /* ======================================================================
    init
    ====================================================================== */
+loadTheme();
 updateMuteButton();
 loadProfile();
 })();
