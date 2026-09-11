@@ -209,7 +209,7 @@ form.composer input[type=text]:focus{border-color:var(--aqua-deep);}
 /* -------- modals (generic) -------- */
 .modal-layer{position:fixed; inset:0; z-index:80; display:none; align-items:center; justify-content:center; background:rgba(13,59,74,0.35); backdrop-filter:blur(3px); padding:18px;}
 .modal-layer.show{display:flex;}
-.modal-card{width:100%; max-width:420px; padding:26px 24px; max-height:88vh; overflow-y:auto; position:relative;}
+.modal-card{width:100%; max-width:470px; padding:26px 24px; max-height:88vh; overflow-y:auto; position:relative;}
 .modal-card h3{margin:0 0 4px; color:var(--aqua-ink);}
 .modal-card .msub{color:var(--ink-dim); font-size:0.82rem; margin:0 0 18px;}
 .modal-actions{display:flex; gap:10px; margin-top:18px;}
@@ -1061,11 +1061,31 @@ body.theme-frutiger header.bar,body.theme-frutiger .composer-wrap{
 body.theme-frutiger .avatar,body.theme-frutiger .room-chip .rc-badge{
   box-shadow:0 4px 10px rgba(0,90,120,.25), inset 0 2px 3px rgba(255,255,255,.8), inset 0 -3px 6px rgba(0,60,40,.15);
 }
-.theme-options{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
-.theme-option{border:1px solid rgba(255,255,255,.85);background:rgba(255,255,255,.55);border-radius:14px;padding:10px 8px;cursor:pointer;color:var(--ink);font:700 .82rem inherit;text-align:left}
-.theme-option.active{border:2px solid var(--aqua-deep);background:rgba(255,255,255,.82)}
-.theme-dot{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:-2px;margin-right:6px;background:var(--dot,#4fd1e8);box-shadow:inset 0 1px 2px #fff}
+/* theme gallery */
+.theme-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:10px;padding-right:2px}
+.theme-option{position:relative;display:block;width:100%;padding:0;overflow:hidden;border:1px solid rgba(255,255,255,.82);background:rgba(255,255,255,.54);border-radius:16px;cursor:pointer;color:var(--ink);font:700 .82rem inherit;text-align:left;box-shadow:0 5px 14px rgba(0,80,110,.08);transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+.theme-option:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(0,80,110,.14)}
+.theme-option:active{transform:translateY(0)}
+.theme-option.active{border:2px solid var(--aqua-deep);box-shadow:0 0 0 2px rgba(18,168,201,.16),0 8px 20px rgba(0,80,110,.15)}
+.theme-option .theme-preview{height:92px;position:relative;padding:9px;overflow:hidden;background:var(--preview-bg,#eaf8fb)}
+.theme-option .theme-preview::before{content:"";position:absolute;inset:0;background:var(--preview-overlay,linear-gradient(135deg,rgba(255,255,255,.35),transparent 55%));pointer-events:none}
+.theme-option .preview-window{position:relative;height:100%;border-radius:10px;padding:7px;overflow:hidden;background:var(--preview-panel,rgba(255,255,255,.72));border:1px solid rgba(255,255,255,.58);box-shadow:0 3px 8px rgba(0,0,0,.12)}
+.theme-option .preview-top{height:8px;width:42%;border-radius:999px;background:var(--preview-accent,#4fd1e8);margin-bottom:8px;opacity:.95}
+.theme-option .preview-bubble{height:12px;border-radius:7px;margin:4px 0;max-width:72%;background:var(--preview-bubble,#fff);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.theme-option .preview-bubble.me{margin-left:auto;background:var(--preview-accent,#4fd1e8);max-width:58%}
+.theme-option .theme-info{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 11px 11px;background:rgba(255,255,255,.32)}
+.theme-option .theme-title{display:flex;align-items:center;gap:7px;min-width:0}
+.theme-option .theme-dot{display:inline-block;width:12px;height:12px;border-radius:50%;flex:none;background:var(--dot,#4fd1e8);box-shadow:inset 0 1px 2px #fff,0 1px 3px rgba(0,0,0,.12)}
+.theme-option .theme-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.theme-option .theme-check{font-size:.68rem;padding:3px 7px;border-radius:999px;background:var(--aqua-deep);color:#fff;opacity:0;transform:scale(.92);transition:opacity .15s ease,transform .15s ease;white-space:nowrap}
+.theme-option.active .theme-check{opacity:1;transform:scale(1)}
+@media (max-width:520px){.theme-options{grid-template-columns:1fr}.theme-option .theme-preview{height:86px}}
 
+
+/* -------- custom cursor -------- */
+html, body { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cdefs%3E%3Cfilter id='s' x='-50%25' y='-50%25' width='200%25' height='200%25'%3E%3CfeDropShadow dx='0' dy='2' stdDeviation='2' flood-color='%23023b4a' flood-opacity='.35'/%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M5 3.5 25.5 18 16.8 19.3 13 27.7 9.6 26 13.4 17.7 5 3.5Z' fill='%23ffffff' stroke='%2308a9c7' stroke-width='1.8' stroke-linejoin='round' filter='url(%23s)'/%3E%3Ccircle cx='9' cy='8' r='2.2' fill='%234fd1e8' opacity='.9'/%3E%3C/svg%3E") 4 3, auto; }
+button, a, [role="button"], input[type="checkbox"], input[type="radio"], input[type="range"], summary { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cdefs%3E%3Cfilter id='s' x='-50%25' y='-50%25' width='200%25' height='200%25'%3E%3CfeDropShadow dx='0' dy='2' stdDeviation='2' flood-color='%23023b4a' flood-opacity='.35'/%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M6 5.5c-.4-1.7 1.5-3 3-2l17 9.4c1.7.9 1.3 3.4-.6 3.9l-6.8 1.8-2 6.8c-.5 1.9-3 2.3-3.9.6L3.3 9.2c-.4-.7-.4-1.5 0-2.2L6 5.5Z' fill='%234fd1e8' stroke='%23ffffff' stroke-width='1.8' stroke-linejoin='round' filter='url(%23s)'/%3E%3Cpath d='m11 7 10.5 7.4-5.1 1.3-1.7 5.4L11 7Z' fill='%23ffffff' opacity='.92'/%3E%3C/svg%3E") 5 4, pointer; }
+input[type="text"], input[type="password"], input[type="search"], textarea, [contenteditable="true"] { cursor: text; }
 </style>
 <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1.29.1/index.js"></script>
 
@@ -1281,28 +1301,94 @@ body.theme-frutiger .avatar,body.theme-frutiger .room-chip .rc-badge{
     <h3>サイトテーマ</h3>
     <p class="msub">KUIYA CHAT 全体の見た目を切り替えます。</p>
     <div class="theme-options" id="themeOptions">
-      <button class="theme-option" data-theme="frutiger"><span class="theme-dot" style="--dot:#4fd1e8"></span>Frutiger Aero</button>
-      <button class="theme-option" data-theme="backrooms"><span class="theme-dot" style="--dot:#9c8b61"></span>The Backrooms</button>
-      <button class="theme-option" data-theme="dreamcore"><span class="theme-dot" style="--dot:#c7a6e8"></span>Dreamcore</button>
-      <button class="theme-option" data-theme="mallcore"><span class="theme-dot" style="--dot:#a8b8aa"></span>Mallcore</button>
-      <button class="theme-option" data-theme="liminal"><span class="theme-dot" style="--dot:#9ca7a3"></span>Liminal Space</button>
-      <button class="theme-option" data-theme="y2k"><span class="theme-dot" style="--dot:#5ecbff"></span>Y2K</button>
-      <button class="theme-option" data-theme="webcore"><span class="theme-dot" style="--dot:#65dfff"></span>Webcore</button>
-      <button class="theme-option" data-theme="brutalism"><span class="theme-dot" style="--dot:#222"></span>Brutalism</button>
-      <button class="theme-option" data-theme="vaporwave"><span class="theme-dot" style="--dot:#ff6ad5"></span>Vaporwave</button>
-      <button class="theme-option" data-theme="frutigereco"><span class="theme-dot" style="--dot:#32cd32"></span>Frutiger Eco</button>
-      <button class="theme-option" data-theme="cyberpunk"><span class="theme-dot" style="--dot:#00ffff"></span>Cyberpunk</button>
-      <button class="theme-option" data-theme="skeuomorphism"><span class="theme-dot" style="--dot:#71808a"></span>Skeuomorphism</button>
-      <button class="theme-option" data-theme="glassmorphism"><span class="theme-dot" style="--dot:#8bc7ff"></span>Glassmorphism</button>
-      <button class="theme-option" data-theme="weirdcore"><span class="theme-dot" style="--dot:#7f8a73"></span>Weirdcore</button>
-      <button class="theme-option" data-theme="kidcore"><span class="theme-dot" style="--dot:#ff74a5"></span>Kidcore</button>
-      <button class="theme-option" data-theme="gothic"><span class="theme-dot" style="--dot:#8b63b6"></span>Gothic</button>
-      <button class="theme-option" data-theme="cybersigilism"><span class="theme-dot" style="--dot:#62e6ff"></span>Cyber Sigilism</button>
-      <button class="theme-option" data-theme="indiesleaze"><span class="theme-dot" style="--dot:#f0c84b"></span>Indie Sleaze</button>
-      <button class="theme-option" data-theme="japanretro"><span class="theme-dot" style="--dot:#b87b4a"></span>Japanese Retro</button>
-      <button class="theme-option" data-theme="roblox"><span class="theme-dot" style="--dot:#3f8edc"></span>Roblox-like</button>
-      <button class="theme-option" data-theme="lego"><span class="theme-dot" style="--dot:#f2c938"></span>Lego-like</button>
-      <button class="theme-option" data-theme="minecraft"><span class="theme-dot" style="--dot:#6da95b"></span>Minecraft-like</button>
+      <button class="theme-option" data-theme="frutiger" style="--dot:#4fd1e8;--preview-bg:#dffaff;--preview-panel:rgba(255,255,255,.78);--preview-accent:linear-gradient(135deg,#bdeff7,#55d5ef);--preview-bubble:#ffffff;">
+        <div class="theme-preview"><div class="preview-window"><div class="preview-top"></div><div class="preview-bubble"></div><div class="preview-bubble me"></div><div class="preview-bubble" style="max-width:45%;"></div></div></div>
+        <div class="theme-info"><div class="theme-title"><span class="theme-dot"></span><span class="theme-name">Frutiger Aero</span></div><span class="theme-check">使用中 ✓</span></div>
+      </button>
+      <button class="theme-option" data-theme="backrooms" style="--dot:#9c8b61;--preview-bg:#a99b71;--preview-panel:rgba(205,194,163,.74);--preview-accent:linear-gradient(135deg,#d7c78d,#8d7b50);--preview-bubble:rgba(242,233,201,.78);">
+        <div class="theme-preview"><div class="preview-window"><div class="preview-top"></div><div class="preview-bubble"></div><div class="preview-bubble me"></div><div class="preview-bubble" style="max-width:45%;"></div></div></div>
+        <div class="theme-info"><div class="theme-title"><span class="theme-dot"></span><span class="theme-name">The Backrooms</span></div><span class="theme-check">使用中 ✓</span></div>
+      </button>
+      <button class="theme-option" data-theme="dreamcore" style="--dot:#c7a6e8;--preview-bg:#e8def8;--preview-panel:rgba(255,255,255,.72);--preview-accent:linear-gradient(135deg,#d9c0ff,#8a72c7);--preview-bubble:rgba(255,255,255,.82);">
+        <div class="theme-preview"><div class="preview-window"><div class="preview-top"></div><div class="preview-bubble"></div><div class="preview-bubble me"></div><div class="preview-bubble" style="max-width:45%;"></div></div></div>
+        <div class="theme-info"><div class="theme-title"><span class="theme-dot"></span><span class="theme-name">Dreamcore</span></div><span class="theme-check">使用中 ✓</span></div>
+      </button>
+      <button class="theme-option" data-theme="mallcore" style="--dot:#a8b8aa;--preview-bg:#d9dfd4;--preview-panel:rgba(247,247,241,.82);--preview-accent:linear-gradient(135deg,#c6d1c5,#8ea08f);--preview-bubble:rgba(255,255,255,.78);">
+        <div class="theme-preview"><div class="preview-window"><div class="preview-top"></div><div class="preview-bubble"></div><div class="preview-bubble me"></div><div class="preview-bubble" style="max-width:45%;"></div></div></div>
+        <div class="theme-info"><div class="theme-title"><span class="theme-dot"></span><span class="theme-name">Mallcore</span></div><span class="theme-check">使用中 ✓</span></div>
+      </button>
+      <button class="theme-option" data-theme="liminal" style="--dot:#9ca7a3;--preview-bg:#d8ddd9;--preview-panel:rgba(255,255,255,.68);--preview-accent:linear-gradient(135deg,#bec8c3,#6f7b76);--preview-bubble:rgba(246,247,244,.8);">
+        <div class="theme-preview"><div class="preview-window"><div class="preview-top"></div><div class="preview-bubble"></div><div class="preview-bubble me"></div><div class="preview-bubble" style="max-width:45%;"></div></div></div>
+        <div class="theme-info"><div class="theme-title"><span class="theme-dot"></span><span class="theme-name">Liminal Space</span></div><span class="theme-check">使用中 ✓</span></div>
+      </button>
+      <button class="theme-option" data-theme="y2k" style="--dot:#5ecbff;--preview-bg:#e1f6ff;--preview-panel:rgba(255,255,255,.7);--preview-accent:linear-gradient(135deg,#b9efff,#5db8ff);--preview-bubble:rgba(255,255,255,.84);">
+        <div class="theme-preview"><div class="preview-window"><div class="preview-top"></div><div class="preview-bubble"></div><div class="preview-bubble me"></div><div class="preview-bubble" style="max-width:45%;"></div></div></div>
+        <div class="theme-info"><div class="theme-title"><span class="theme-dot"></span><span class="theme-name">Y2K</span></div><span class="theme-check">使用中 ✓</span></div>
+      </button>
+      <button class="theme-option" data-theme="webcore" style="--dot:#65dfff;--preview-bg:#c8f6ff;--preview-panel:rgba(255,255,255,.72);--preview-accent:linear-gradient(135deg,#65dfff,#86a8ff);--preview-bubble:rgba(255,255,255,.82);">
+        <div class="theme-preview"><div class="preview-window"><div class="preview-top"></div><div class="preview-bubble"></div><div class="preview-bubble me"></div><div class="preview-bubble" style="max-width:45%;"></div></div></div>
+        <div class="theme-info"><div class="theme-title"><span class="theme-dot"></span><span class="theme-name">Webcore</span></div><span class="theme-check">使用中 ✓</span></div>
+      </button>
+      <button class="theme-option" data-theme="brutalism" style="--dot:#222222;--preview-bg:#e9e9e9;--preview-panel:#f6f6f6;--preview-accent:linear-gradient(135deg,#ffffff,#bdbdbd);--preview-bubble:white;">
+        <div class="theme-preview"><div class="preview-window"><div class="preview-top"></div><div class="preview-bubble"></div><div class="preview-bubble me"></div><div class="preview-bubble" style="max-width:45%;"></div></div></div>
+        <div class="theme-info"><div class="theme-title"><span class="theme-dot"></span><span class="theme-name">Brutalism</span></div><span class="theme-check">使用中 ✓</span></div>
+      </button>
+      <button class="theme-option" data-theme="vaporwave" style="--dot:#ff6ad5;--preview-bg:#f4d6f0;--preview-panel:rgba(255,255,255,.72);--preview-accent:linear-gradient(135deg,#ff9bea,#7668ff);--preview-bubble:rgba(255,255,255,.82);">
+        <div class="theme-preview"><div class="preview-window"><div class="preview-top"></div><div class="preview-bubble"></div><div class="preview-bubble me"></div><div class="preview-bubble" style="max-width:45%;"></div></div></div>
+        <div class="theme-info"><div class="theme-title"><span class="theme-dot"></span><span class="theme-name">Vaporwave</span></div><span class="theme-check">使用中 ✓</span></div>
+      </button>
+      <button class="theme-option" data-theme="frutigereco" style="--dot:#32cd32;--preview-bg:#dff8d8;--preview-panel:rgba(255,255,255,.75);--preview-accent:linear-gradient(135deg,#9fe77f,#33b76b);--preview-bubble:rgba(255,255,255,.82);">
+        <div class="theme-preview"><div class="preview-window"><div class="preview-top"></div><div class="preview-bubble"></div><div class="preview-bubble me"></div><div class="preview-bubble" style="max-width:45%;"></div></div></div>
+        <div class="theme-info"><div class="theme-title"><span class="theme-dot"></span><span class="theme-name">Frutiger Eco</span></div><span class="theme-check">使用中 ✓</span></div>
+      </button>
+      <button class="theme-option" data-theme="cyberpunk" style="--dot:#00ffff;--preview-bg:#141524;--preview-panel:rgba(20,20,34,.82);--preview-accent:linear-gradient(135deg,#16172b,#3d0b58);--preview-bubble:rgba(12,24,32,.9);">
+        <div class="theme-preview"><div class="preview-window"><div class="preview-top"></div><div class="preview-bubble"></div><div class="preview-bubble me"></div><div class="preview-bubble" style="max-width:45%;"></div></div></div>
+        <div class="theme-info"><div class="theme-title"><span class="theme-dot"></span><span class="theme-name">Cyberpunk</span></div><span class="theme-check">使用中 ✓</span></div>
+      </button>
+      <button class="theme-option" data-theme="skeuomorphism" style="--dot:#71808a;--preview-bg:#c5c9c7;--preview-panel:linear-gradient(180deg,#ededed,#c7c7c7);--preview-accent:linear-gradient(135deg,#9aa7ae,#58636a);--preview-bubble:rgba(245,245,245,.9);">
+        <div class="theme-preview"><div class="preview-window"><div class="preview-top"></div><div class="preview-bubble"></div><div class="preview-bubble me"></div><div class="preview-bubble" style="max-width:45%;"></div></div></div>
+        <div class="theme-info"><div class="theme-title"><span class="theme-dot"></span><span class="theme-name">Skeuomorphism</span></div><span class="theme-check">使用中 ✓</span></div>
+      </button>
+      <button class="theme-option" data-theme="glassmorphism" style="--dot:#8bc7ff;--preview-bg:#d9ecff;--preview-panel:rgba(255,255,255,.35);--preview-accent:linear-gradient(135deg,#bfe7ff,#9eb7ff);--preview-bubble:rgba(255,255,255,.38);">
+        <div class="theme-preview"><div class="preview-window"><div class="preview-top"></div><div class="preview-bubble"></div><div class="preview-bubble me"></div><div class="preview-bubble" style="max-width:45%;"></div></div></div>
+        <div class="theme-info"><div class="theme-title"><span class="theme-dot"></span><span class="theme-name">Glassmorphism</span></div><span class="theme-check">使用中 ✓</span></div>
+      </button>
+      <button class="theme-option" data-theme="weirdcore" style="--dot:#7f8a73;--preview-bg:#d4d8c7;--preview-panel:rgba(245,245,235,.66);--preview-accent:linear-gradient(135deg,#c8d1b2,#6b705d);--preview-bubble:rgba(255,255,245,.75);">
+        <div class="theme-preview"><div class="preview-window"><div class="preview-top"></div><div class="preview-bubble"></div><div class="preview-bubble me"></div><div class="preview-bubble" style="max-width:45%;"></div></div></div>
+        <div class="theme-info"><div class="theme-title"><span class="theme-dot"></span><span class="theme-name">Weirdcore</span></div><span class="theme-check">使用中 ✓</span></div>
+      </button>
+      <button class="theme-option" data-theme="kidcore" style="--dot:#ff74a5;--preview-bg:#ffe1ea;--preview-panel:rgba(255,255,255,.84);--preview-accent:linear-gradient(135deg,#ffef54,#ff74a5);--preview-bubble:rgba(255,255,255,.9);">
+        <div class="theme-preview"><div class="preview-window"><div class="preview-top"></div><div class="preview-bubble"></div><div class="preview-bubble me"></div><div class="preview-bubble" style="max-width:45%;"></div></div></div>
+        <div class="theme-info"><div class="theme-title"><span class="theme-dot"></span><span class="theme-name">Kidcore</span></div><span class="theme-check">使用中 ✓</span></div>
+      </button>
+      <button class="theme-option" data-theme="gothic" style="--dot:#8b63b6;--preview-bg:#211a29;--preview-panel:rgba(37,29,45,.86);--preview-accent:linear-gradient(135deg,#1a1520,#5b3f70);--preview-bubble:rgba(241,235,246,.16);">
+        <div class="theme-preview"><div class="preview-window"><div class="preview-top"></div><div class="preview-bubble"></div><div class="preview-bubble me"></div><div class="preview-bubble" style="max-width:45%;"></div></div></div>
+        <div class="theme-info"><div class="theme-title"><span class="theme-dot"></span><span class="theme-name">Gothic</span></div><span class="theme-check">使用中 ✓</span></div>
+      </button>
+      <button class="theme-option" data-theme="cybersigilism" style="--dot:#62e6ff;--preview-bg:#090d18;--preview-panel:rgba(12,18,30,.86);--preview-accent:linear-gradient(135deg,#08121c,#1f3350);--preview-bubble:rgba(98,230,255,.11);">
+        <div class="theme-preview"><div class="preview-window"><div class="preview-top"></div><div class="preview-bubble"></div><div class="preview-bubble me"></div><div class="preview-bubble" style="max-width:45%;"></div></div></div>
+        <div class="theme-info"><div class="theme-title"><span class="theme-dot"></span><span class="theme-name">Cyber Sigilism</span></div><span class="theme-check">使用中 ✓</span></div>
+      </button>
+      <button class="theme-option" data-theme="indiesleaze" style="--dot:#f0c84b;--preview-bg:#2a2926;--preview-panel:rgba(38,37,34,.84);--preview-accent:linear-gradient(135deg,#3d3a2d,#7d6b2f);--preview-bubble:rgba(255,247,211,.12);">
+        <div class="theme-preview"><div class="preview-window"><div class="preview-top"></div><div class="preview-bubble"></div><div class="preview-bubble me"></div><div class="preview-bubble" style="max-width:45%;"></div></div></div>
+        <div class="theme-info"><div class="theme-title"><span class="theme-dot"></span><span class="theme-name">Indie Sleaze</span></div><span class="theme-check">使用中 ✓</span></div>
+      </button>
+      <button class="theme-option" data-theme="japanretro" style="--dot:#b87b4a;--preview-bg:#f0dfc5;--preview-panel:rgba(249,240,220,.88);--preview-accent:linear-gradient(135deg,#dfb07f,#8d4c32);--preview-bubble:rgba(255,247,230,.9);">
+        <div class="theme-preview"><div class="preview-window"><div class="preview-top"></div><div class="preview-bubble"></div><div class="preview-bubble me"></div><div class="preview-bubble" style="max-width:45%;"></div></div></div>
+        <div class="theme-info"><div class="theme-title"><span class="theme-dot"></span><span class="theme-name">Japanese Retro</span></div><span class="theme-check">使用中 ✓</span></div>
+      </button>
+      <button class="theme-option" data-theme="roblox" style="--dot:#3f8edc;--preview-bg:#cfe8ff;--preview-panel:rgba(255,255,255,.8);--preview-accent:linear-gradient(135deg,#8fc2ff,#3f8edc);--preview-bubble:rgba(255,255,255,.9);">
+        <div class="theme-preview"><div class="preview-window"><div class="preview-top"></div><div class="preview-bubble"></div><div class="preview-bubble me"></div><div class="preview-bubble" style="max-width:45%;"></div></div></div>
+        <div class="theme-info"><div class="theme-title"><span class="theme-dot"></span><span class="theme-name">Roblox-like</span></div><span class="theme-check">使用中 ✓</span></div>
+      </button>
+      <button class="theme-option" data-theme="lego" style="--dot:#f2c938;--preview-bg:#fff0a8;--preview-panel:rgba(255,255,255,.84);--preview-accent:linear-gradient(135deg,#ff6d57,#f2c938);--preview-bubble:rgba(255,255,255,.9);">
+        <div class="theme-preview"><div class="preview-window"><div class="preview-top"></div><div class="preview-bubble"></div><div class="preview-bubble me"></div><div class="preview-bubble" style="max-width:45%;"></div></div></div>
+        <div class="theme-info"><div class="theme-title"><span class="theme-dot"></span><span class="theme-name">Lego-like</span></div><span class="theme-check">使用中 ✓</span></div>
+      </button>
+      <button class="theme-option" data-theme="minecraft" style="--dot:#6da95b;--preview-bg:#d6e9ca;--preview-panel:rgba(239,235,216,.86);--preview-accent:linear-gradient(135deg,#7ab85d,#5b7749);--preview-bubble:rgba(255,255,255,.78);">
+        <div class="theme-preview"><div class="preview-window"><div class="preview-top"></div><div class="preview-bubble"></div><div class="preview-bubble me"></div><div class="preview-bubble" style="max-width:45%;"></div></div></div>
+        <div class="theme-info"><div class="theme-title"><span class="theme-dot"></span><span class="theme-name">Minecraft-like</span></div><span class="theme-check">使用中 ✓</span></div>
+      </button>
     </div>
   </div>
 </div>
