@@ -1581,54 +1581,82 @@ function toast(msg){
   clearTimeout(toast._h); toast._h = setTimeout(()=>t.classList.remove('show'), 2600);
 }
 
-// Notification support: request permission from a user gesture and use a service
-// worker notification path when available (important for mobile browsers).
+// Desktop notification support.
+// GitHub Pages is HTTPS, so Service Worker notifications work in supported desktop browsers.
 let notificationSW = null;
+
 async function initNotificationSW(){
   if(!('serviceWorker' in navigator)) return null;
   try{
-    notificationSW = await navigator.serviceWorker.register('./kuiya-notification-sw.js');
+    notificationSW = await navigator.serviceWorker.register('./kuiya-notification-sw.js', {scope:'./'});
     return notificationSW;
   }catch(e){
     console.warn('通知用Service Workerの登録に失敗', e);
     return null;
   }
 }
+
 function notificationStatusText(){
   if(!('Notification' in window)) return 'このブラウザは通知APIに対応していません';
   if(location.protocol !== 'https:' && location.hostname !== 'localhost') return '通知を使うにはHTTPSで開いてください';
-  const p=Notification.permission;
-  if(p==='granted') return '通知は許可されています ✓';
-  if(p==='denied') return '通知がブロックされています。ブラウザのサイト設定から許可してください';
+  if(Notification.permission==='granted') return '通知は許可されています ✓';
+  if(Notification.permission==='denied') return '通知がブロックされています。ブラウザのサイト設定から許可してください';
   return 'まだ通知を許可していません';
 }
+
 function updateNotificationStatus(){
   const el=document.getElementById('notificationStatus');
   if(el) el.textContent=notificationStatusText();
 }
+
 async function requestNotifications(){
   if(!('Notification' in window)){ toast('このブラウザは通知に対応していません'); return false; }
-  if(location.protocol !== 'https:' && location.hostname !== 'localhost'){ toast('GitHub PagesなどHTTPS上で開いてください'); updateNotificationStatus(); return false; }
-  try{
-    const p=await Notification.requestPermission();
+  if(location.protocol !== 'https:' && location.hostname !== 'localhost'){
+    toast('GitHub PagesなどHTTPS上で開いてください');
     updateNotificationStatus();
-    if(p==='granted'){ await initNotificationSW(); toast('通知を有効にしました'); return true; }
-    toast(p==='denied' ? '通知がブロックされています' : '通知はまだ許可されていません');
     return false;
-  }catch(e){ console.warn('通知許可エラー',e); toast('通知の許可に失敗しました'); return false; }
+  }
+  try{
+    const permission = Notification.permission==='default'
+      ? await Notification.requestPermission()
+      : Notification.permission;
+    updateNotificationStatus();
+    if(permission!=='granted'){
+      toast(permission==='denied' ? '通知がブロックされています' : '通知はまだ許可されていません');
+      return false;
+    }
+    const reg = await initNotificationSW();
+    if(!reg){
+      toast('通知の準備に失敗しました');
+      return false;
+    }
+    toast('通知を有効にしました');
+    return true;
+  }catch(e){
+    console.warn('通知設定エラー', e);
+    toast('通知の設定に失敗しました');
+    return false;
+  }
 }
+
 async function showAppNotification(title, body){
   if(!('Notification' in window) || Notification.permission!=='granted') return;
   try{
     const reg = notificationSW || await initNotificationSW();
-    if(reg && reg.showNotification){
-      await reg.showNotification(title, { body, tag:'kuiya-chat', renotify:true, icon:'./favicon.ico' }).catch(()=>{});
-      return;
-    }
-  }catch(e){}
-  // Desktop fallback. Most mobile browsers require serviceWorker.showNotification().
-  try{ new Notification(title, {body}); }catch(e){}
+    if(!reg) return;
+    const activeReg = await navigator.serviceWorker.ready;
+    await activeReg.showNotification(String(title).slice(0,80), {
+      body:String(body||'').slice(0,160),
+      tag:'kuiya-chat',
+      renotify:true,
+      icon:'./favicon.ico',
+      badge:'./favicon.ico'
+    });
+  }catch(e){
+    console.warn('デスクトップ通知エラー', e);
+  }
 }
+
 function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function initialOf(n){ return (n||"?").trim().charAt(0).toUpperCase() || "?"; }
 function safeKey(str){
@@ -2834,15 +2862,16 @@ document.getElementById('roomTitle').addEventListener('click', ()=>{ const b=doc
 
 const enableNotificationsBtn=document.getElementById('enableNotificationsBtn');
 if(enableNotificationsBtn) enableNotificationsBtn.addEventListener('click', requestNotifications);
+
 const testNotificationBtn=document.getElementById('testNotificationBtn');
 if(testNotificationBtn) testNotificationBtn.addEventListener('click', async ()=>{
-  if(Notification.permission!=='granted'){
-    const ok=await requestNotifications();
-    if(!ok) return;
-  }
+  const ok = await requestNotifications();
+  if(!ok) return;
   await showAppNotification('KUIYA CHAT', 'これはテスト通知です');
 });
+
 updateNotificationStatus();
+// Service Workerは先に登録しておく。通知の許可ダイアログ自体はボタン操作から行う。
 initNotificationSW();
 
 /* ======================================================================
