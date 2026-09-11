@@ -273,7 +273,7 @@ input[type=range]{width:100%;}
 .shr-history .hitem img{width:78px;height:78px;object-fit:contain; background:rgba(255,255,255,0.6); border-radius:12px;}
 .shr-history .hitem .hy{font-size:0.72rem; color:var(--ink-dim); margin-top:3px;}
 .shr-canvas-wrap{flex:1; display:flex; align-items:center; justify-content:center; padding:10px;}
-#shrCanvas{width:min(86vw,560px);height:min(86vw,560px);max-width:100%;max-height:100%;background:#fff;border-radius:18px;touch-action:none;box-shadow:0 8px 24px rgba(18,120,150,0.2);}
+#shrCanvas{width:min(88vw,720px);height:min(88vw,720px);max-width:100%;max-height:100%;background:#fff;border-radius:18px;touch-action:none;box-shadow:0 8px 24px rgba(18,120,150,0.2);}
 .shr-tools{display:flex; align-items:center; gap:10px; padding:10px 16px; flex-wrap:wrap;}
 .shr-colors{display:flex; gap:6px;}
 .shr-colors button{width:22px;height:22px;border-radius:50%; border:2px solid rgba(255,255,255,0.9); cursor:pointer;}
@@ -1358,9 +1358,13 @@ body.theme-frutiger .avatar,body.theme-frutiger .room-chip .rc-badge{
   </div>
   <div class="shr-status" id="shrStatus">読み込み中…</div>
   <div class="shr-history" id="shrHistory"></div>
-  <div class="shr-canvas-wrap"><canvas id="shrCanvas" width="600" height="600"></canvas></div>
+  <div class="shr-canvas-wrap"><canvas id="shrCanvas" width="720" height="720"></canvas></div>
   <div class="shr-tools">
     <div class="shr-colors" id="shrColors"></div>
+    <label class="shr-custom-color" title="好きな色を選ぶ">
+      <input type="color" id="shrColorPicker" value="#0d3b4a" aria-label="ペンの色を選択">
+      <span>自由な色</span>
+    </label>
     <input type="range" id="shrWidth" min="2" max="14" value="5" style="width:90px;">
     <button class="btn btn-ghost" id="shrClearBtn" style="padding:8px 14px;">消す</button>
     <button class="btn btn-ghost" id="shrRestartBtn" style="padding:8px 14px;">最初から</button>
@@ -2969,27 +2973,50 @@ document.getElementById('gameBtn').addEventListener('click', async ()=>{
 });
 document.getElementById('shrCloseBtn').addEventListener('click', ()=> document.getElementById('shiritoriOverlay').classList.remove('show'));
 
-const SHR_COLORS = ["#0d3b4a","#12a8c9","#4bc46a","#ff8a7a","#ffb648","#8a6fff"];
+const SHR_COLORS = [
+  "#000000","#ffffff","#7f8c8d","#c0392b","#e74c3c","#ff8a7a",
+  "#e67e22","#ffb648","#f1c40f","#f39c12","#2ecc71","#4bc46a",
+  "#00a878","#12a8c9","#00bcd4","#3498db","#246bce","#8a6fff",
+  "#6c5ce7","#9b59b6","#ff6fb0","#e84393","#795548"
+];
 let shrColor = SHR_COLORS[0], shrWidth = 5;
 (function buildShrColors(){
   const wrap = document.getElementById('shrColors');
   SHR_COLORS.forEach(c=>{
-    const b = document.createElement('button'); b.style.background=c;
-    b.addEventListener('click', ()=>{ shrColor=c; });
+    const b = document.createElement('button');
+    b.type='button'; b.style.background=c; b.title=c;
+    b.addEventListener('click', ()=> setShrColor(c));
     wrap.appendChild(b);
   });
+  const picker = document.getElementById('shrColorPicker');
+  picker.addEventListener('input', e=> setShrColor(e.target.value, false));
+  updateShrColorUI();
 })();
+function setShrColor(c, syncPicker=true){
+  shrColor = c;
+  if(syncPicker) document.getElementById('shrColorPicker').value = c;
+  updateShrColorUI();
+}
+function updateShrColorUI(){
+  document.querySelectorAll('#shrColors button').forEach(b=> b.classList.toggle('active', b.style.backgroundColor === hexToRgbString(shrColor)));
+}
+function hexToRgbString(hex){
+  const h = hex.replace('#','');
+  if(h.length!==6) return '';
+  const r=parseInt(h.slice(0,2),16), g=parseInt(h.slice(2,4),16), b=parseInt(h.slice(4,6),16);
+  return `rgb(${r}, ${g}, ${b})`;
+}
 document.getElementById('shrWidth').addEventListener('input', e=> shrWidth = parseInt(e.target.value,10));
 
 const shrCanvas = document.getElementById('shrCanvas');
 const shrCtx = shrCanvas.getContext('2d');
-shrCtx.fillStyle = '#fff'; shrCtx.fillRect(0,0,600,600);
+shrCtx.fillStyle = '#fff'; shrCtx.fillRect(0,0,720,720);
 let shrDrawing=false, shrLastX=0, shrLastY=0;
 function shrPos(e){
   const rect = shrCanvas.getBoundingClientRect();
   const cx = (e.touches? e.touches[0].clientX : e.clientX) - rect.left;
   const cy = (e.touches? e.touches[0].clientY : e.clientY) - rect.top;
-  return {x:cx*(600/rect.width), y:cy*(600/rect.height)};
+  return {x:cx*(720/rect.width), y:cy*(720/rect.height)};
 }
 shrCanvas.addEventListener('pointerdown', e=>{ shrDrawing=true; const p=shrPos(e); shrLastX=p.x; shrLastY=p.y; });
 shrCanvas.addEventListener('pointermove', e=>{
@@ -3000,7 +3027,7 @@ shrCanvas.addEventListener('pointermove', e=>{
   shrLastX=p.x; shrLastY=p.y;
 });
 window.addEventListener('pointerup', ()=> shrDrawing=false);
-document.getElementById('shrClearBtn').addEventListener('click', ()=>{ shrCtx.fillStyle='#fff'; shrCtx.fillRect(0,0,300,300); });
+document.getElementById('shrClearBtn').addEventListener('click', ()=>{ shrCtx.fillStyle='#fff'; shrCtx.fillRect(0,0,720,720); });
 
 function normalizeYomi(s){
   s = s.trim();
@@ -3055,13 +3082,13 @@ document.getElementById('shrSubmitForm').addEventListener('submit', async e=>{
   const norm = normalizeYomi(yomi);
   if(norm.last==='ん'){ s.over = true; } else { s.turnPid = null; /* open turn: whoever draws next */ }
   yomiInput.value='';
-  shrCtx.fillStyle='#fff'; shrCtx.fillRect(0,0,300,300);
+  shrCtx.fillStyle='#fff'; shrCtx.fillRect(0,0,720,720);
   await writeShiritori(s);
   renderShiritori(s);
 });
 document.getElementById('shrRestartBtn').addEventListener('click', async ()=>{
   await writeShiritori({ history:[], turnPid:null, over:false });
-  shrCtx.fillStyle='#fff'; shrCtx.fillRect(0,0,300,300);
+  shrCtx.fillStyle='#fff'; shrCtx.fillRect(0,0,720,720);
   toast("最初からスタートします");
 });
 
