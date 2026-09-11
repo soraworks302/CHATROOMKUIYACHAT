@@ -273,7 +273,7 @@ input[type=range]{width:100%;}
 .shr-history .hitem img{width:78px;height:78px;object-fit:contain; background:rgba(255,255,255,0.6); border-radius:12px;}
 .shr-history .hitem .hy{font-size:0.72rem; color:var(--ink-dim); margin-top:3px;}
 .shr-canvas-wrap{flex:1; display:flex; align-items:center; justify-content:center; padding:10px;}
-#shrCanvas{background:#fff; border-radius:18px; touch-action:none; box-shadow:0 8px 24px rgba(18,120,150,0.2);}
+#shrCanvas{width:min(86vw,560px);height:min(86vw,560px);max-width:100%;max-height:100%;background:#fff;border-radius:18px;touch-action:none;box-shadow:0 8px 24px rgba(18,120,150,0.2);}
 .shr-tools{display:flex; align-items:center; gap:10px; padding:10px 16px; flex-wrap:wrap;}
 .shr-colors{display:flex; gap:6px;}
 .shr-colors button{width:22px;height:22px;border-radius:50%; border:2px solid rgba(255,255,255,0.9); cursor:pointer;}
@@ -1358,7 +1358,7 @@ body.theme-frutiger .avatar,body.theme-frutiger .room-chip .rc-badge{
   </div>
   <div class="shr-status" id="shrStatus">読み込み中…</div>
   <div class="shr-history" id="shrHistory"></div>
-  <div class="shr-canvas-wrap"><canvas id="shrCanvas" width="300" height="300"></canvas></div>
+  <div class="shr-canvas-wrap"><canvas id="shrCanvas" width="600" height="600"></canvas></div>
   <div class="shr-tools">
     <div class="shr-colors" id="shrColors"></div>
     <input type="range" id="shrWidth" min="2" max="14" value="5" style="width:90px;">
@@ -2983,13 +2983,13 @@ document.getElementById('shrWidth').addEventListener('input', e=> shrWidth = par
 
 const shrCanvas = document.getElementById('shrCanvas');
 const shrCtx = shrCanvas.getContext('2d');
-shrCtx.fillStyle = '#fff'; shrCtx.fillRect(0,0,300,300);
+shrCtx.fillStyle = '#fff'; shrCtx.fillRect(0,0,600,600);
 let shrDrawing=false, shrLastX=0, shrLastY=0;
 function shrPos(e){
   const rect = shrCanvas.getBoundingClientRect();
   const cx = (e.touches? e.touches[0].clientX : e.clientX) - rect.left;
   const cy = (e.touches? e.touches[0].clientY : e.clientY) - rect.top;
-  return {x:cx*(300/rect.width), y:cy*(300/rect.height)};
+  return {x:cx*(600/rect.width), y:cy*(600/rect.height)};
 }
 shrCanvas.addEventListener('pointerdown', e=>{ shrDrawing=true; const p=shrPos(e); shrLastX=p.x; shrLastY=p.y; });
 shrCanvas.addEventListener('pointermove', e=>{
