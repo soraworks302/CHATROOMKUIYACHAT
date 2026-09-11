@@ -1715,19 +1715,24 @@ async function enterRoom(passphrase){
     const m = snapshot.val();
     if (!lastRenderedIds.has(m.id)) {
       lastRenderedIds.add(m.id);
-      const row = buildMessageRow(m, {}, {});
+      const row = buildMessageRow(m, latestPresence, {});
       document.getElementById('thread').appendChild(row);
       document.getElementById('thread').scrollTo({ top: document.getElementById('thread').scrollHeight, behavior: 'smooth' });
     }
   });
 
   const myPresenceRef = db.ref('rooms/' + room + '/presence/' + myId);
-  myPresenceRef.set({ name: myProfile.name, ts: nowTs() });
+  myPresenceRef.set({
+    name: myProfile.name,
+    ts: nowTs(),
+    avatar: myProfile.avatar,
+    frame: myProfile.frame
+  });
   myPresenceRef.onDisconnect().remove();
 
   db.ref('rooms/' + room + '/presence').on('value', (snapshot) => {
-    const presence = snapshot.val() || {};
-    renderPresence(presence);
+    latestPresence = snapshot.val() || {};
+    renderPresence(latestPresence);
   });
 
   // 通話のシグナリング／タイピング中表示／YouTube Party／絵しりとりなど
@@ -1751,6 +1756,7 @@ document.getElementById('backToEntryBtn').addEventListener('click', ()=>{
 let pollTimer=null, hbTimer=null, typingPollTimer=null;
 let lastRenderedIds = new Set();
 let processedSignalIds = new Set();
+let latestPresence = {};
 
 async function heartbeat(){
   const state = await readState();
@@ -1886,6 +1892,8 @@ document.getElementById('msgInput').addEventListener('keydown', e=>{
 
 async function renderMessages(messages, presence, readTimes){
   if(!messages) return;
+  latestPresence = presence || latestPresence || {};
+  presence = latestPresence;
   readTimes = readTimes || {};
   const thread = document.getElementById('thread');
   const newOnes = messages.filter(m=>!lastRenderedIds.has(m.id));
@@ -1937,8 +1945,11 @@ function buildMessageRow(m, presence, readTimes){
   row.className = 'msg-row ' + (m.pid===myId ? 'me':'them');
   row.dataset.id = m.id;
   const info = presence[m.pid] || {};
+  // 自分の発言は、共有Presenceの反映タイミングに関係なく
+  // 現在のプロフィール設定を最優先で表示する。
+  const avatarInfo = m.pid === myId ? myProfile : info;
   const av = document.createElement('div');
-  av.innerHTML = avatarHtml(m.name, info.avatar, info.frame, 32);
+  av.innerHTML = avatarHtml(m.name, avatarInfo.avatar, avatarInfo.frame, 32);
   row.appendChild(av.firstChild);
 
   const col = document.createElement('div');
