@@ -1339,6 +1339,12 @@ body.theme-brutalism,body.theme-webcore{cursor:url("data:image/svg+xml,%3Csvg xm
       <input type="file" id="bgFileInput" accept="image/*" class="hidden">
       <div class="hint">アップロード後、拡大・移動して枠に合わせられます。</div>
     </div>
+    <div class="field">
+      <label>通知</label>
+      <button class="btn btn-ghost" id="enableNotificationsBtn" style="width:100%;">🔔 通知を有効にする</button>
+      <button class="btn btn-ghost" id="testNotificationBtn" style="width:100%; margin-top:8px;">🔔 テスト通知を送る</button>
+      <div class="hint" id="notificationStatus">通知の状態を確認しています…</div>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" id="bgClearBtn" style="flex:1;">背景を解除</button>
       <button class="btn btn-glossy" id="saveRoomSettingsBtn" style="flex:1;">保存する</button>
@@ -1573,6 +1579,55 @@ function toast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   clearTimeout(toast._h); toast._h = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+// Notification support: request permission from a user gesture and use a service
+// worker notification path when available (important for mobile browsers).
+let notificationSW = null;
+async function initNotificationSW(){
+  if(!('serviceWorker' in navigator)) return null;
+  try{
+    notificationSW = await navigator.serviceWorker.register('./kuiya-notification-sw.js');
+    return notificationSW;
+  }catch(e){
+    console.warn('通知用Service Workerの登録に失敗', e);
+    return null;
+  }
+}
+function notificationStatusText(){
+  if(!('Notification' in window)) return 'このブラウザは通知APIに対応していません';
+  if(location.protocol !== 'https:' && location.hostname !== 'localhost') return '通知を使うにはHTTPSで開いてください';
+  const p=Notification.permission;
+  if(p==='granted') return '通知は許可されています ✓';
+  if(p==='denied') return '通知がブロックされています。ブラウザのサイト設定から許可してください';
+  return 'まだ通知を許可していません';
+}
+function updateNotificationStatus(){
+  const el=document.getElementById('notificationStatus');
+  if(el) el.textContent=notificationStatusText();
+}
+async function requestNotifications(){
+  if(!('Notification' in window)){ toast('このブラウザは通知に対応していません'); return false; }
+  if(location.protocol !== 'https:' && location.hostname !== 'localhost'){ toast('GitHub PagesなどHTTPS上で開いてください'); updateNotificationStatus(); return false; }
+  try{
+    const p=await Notification.requestPermission();
+    updateNotificationStatus();
+    if(p==='granted'){ await initNotificationSW(); toast('通知を有効にしました'); return true; }
+    toast(p==='denied' ? '通知がブロックされています' : '通知はまだ許可されていません');
+    return false;
+  }catch(e){ console.warn('通知許可エラー',e); toast('通知の許可に失敗しました'); return false; }
+}
+async function showAppNotification(title, body){
+  if(!('Notification' in window) || Notification.permission!=='granted') return;
+  try{
+    const reg = notificationSW || await initNotificationSW();
+    if(reg && reg.showNotification){
+      await reg.showNotification(title, { body, tag:'kuiya-chat', renotify:true, icon:'./favicon.ico' }).catch(()=>{});
+      return;
+    }
+  }catch(e){}
+  // Desktop fallback. Most mobile browsers require serviceWorker.showNotification().
+  try{ new Notification(title, {body}); }catch(e){}
 }
 function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function initialOf(n){ return (n||"?").trim().charAt(0).toUpperCase() || "?"; }
@@ -2028,7 +2083,6 @@ async function enterRoom(passphrase){
   lastRenderedIds = new Set();
   hasLoadedOnce = false;
 
-  if(window.Notification && window.Notification.permission==='default'){ window.Notification.requestPermission().catch(()=>{}); }
 
   document.getElementById('thread').innerHTML = '';
   lastRenderedIds.clear();
@@ -2267,11 +2321,7 @@ async function renderMessages(messages, presence, readTimes){
   }
 }
 function notify(name, body){
-  try{
-    if(window.Notification && Notification.permission==='granted'){
-      new Notification(`${name} ${body}`.slice(0,120));
-    }
-  }catch(e){}
+  showAppNotification(`${name}`.slice(0,80), String(body||'').slice(0,160));
 }
 
 function messagePreviewText(m){
@@ -2781,6 +2831,19 @@ document.getElementById('saveRoomSettingsBtn').addEventListener('click', async (
 });
 
 document.getElementById('roomTitle').addEventListener('click', ()=>{ const b=document.getElementById('settingsBtn'); if(b) b.click(); });
+
+const enableNotificationsBtn=document.getElementById('enableNotificationsBtn');
+if(enableNotificationsBtn) enableNotificationsBtn.addEventListener('click', requestNotifications);
+const testNotificationBtn=document.getElementById('testNotificationBtn');
+if(testNotificationBtn) testNotificationBtn.addEventListener('click', async ()=>{
+  if(Notification.permission!=='granted'){
+    const ok=await requestNotifications();
+    if(!ok) return;
+  }
+  await showAppNotification('KUIYA CHAT', 'これはテスト通知です');
+});
+updateNotificationStatus();
+initNotificationSW();
 
 /* ======================================================================
    CALL SYSTEM (mesh, joinable anytime)
