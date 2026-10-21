@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KUIYA CHAT Googleログイン確認</title>
+<style>
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;box-sizing:border-box;background:linear-gradient(135deg,#eaf7ff,#b7e6f5);font-family:system-ui,-apple-system,sans-serif;color:#12324c}main{width:min(100%,440px);box-sizing:border-box;background:#ffffffdf;border:1px solid white;border-radius:22px;padding:26px;box-shadow:0 16px 45px #12506a22}h1{font-size:1.35rem;margin:0 0 8px}p{line-height:1.6;color:#4b6275}button{width:100%;padding:13px;border:1px solid #b7cbd8;border-radius:12px;background:white;color:#12324c;font:inherit;font-weight:700;cursor:pointer;margin-top:8px}button.primary{background:#087fa4;color:white;border-color:#087fa4}button:disabled{opacity:.6}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#eef5f8;padding:12px;border-radius:10px;font-size:.9rem}#status{min-height:1.5em;font-size:.9rem;overflow-wrap:anywhere}.error{color:#a31d2d}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+</head><body><main>
+<h1>KUIYA CHAT — Googleログイン確認</h1>
+<p>確認専用ページです。チャットデータベースには接続せず、既存のチャットやデータを変更しません。</p>
+<button class="primary" id="login">Googleでログイン</button><button id="logout" hidden>ログアウト</button>
+<div id="status" role="status" aria-live="polite">ログインしていません。</div>
+<section id="details" hidden><p>ログイン成功。UIDはFirebaseの許可設定に使う識別子です。公開投稿や他人への共有はしないでください。</p><strong>UID</strong><pre id="uid"></pre><strong>メールアドレス</strong><pre id="email"></pre><button id="copy">UIDをコピー</button></section>
+<p style="font-size:.8rem">このページでログインできても、チャット本体のアクセス権が付与されたことにはなりません。</p>
+</main><script>
+(function(){
+ const firebaseConfig={apiKey:"AIzaSyDyGVOwquXEAHe5vJdc0p5audIepJJCpkY",authDomain:"newchat-6c7e5.firebaseapp.com",databaseURL:"https://newchat-6c7e5-default-rtdb.firebaseio.com",projectId:"newchat-6c7e5",storageBucket:"newchat-6c7e5.firebasestorage.app",messagingSenderId:"543134915435",appId:"1:543134915435:web:3a061e5738ceff23cc0a2e"};
+ const $=id=>document.getElementById(id); const showError=(prefix,e)=>{$('status').className='error';$('status').textContent=prefix+' ('+(e.code||'エラーコードなし')+'): '+(e.message||'詳細なし');};
+ try {
+  if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  const auth=firebase.auth(); const provider=new firebase.auth.GoogleAuthProvider();
+  auth.onAuthStateChanged(user=>{
+   $('login').hidden=!!user; $('logout').hidden=!user; $('details').hidden=!user;
+   if(user){$('status').className='';$('status').textContent='Googleログイン成功。';$('uid').textContent=user.uid;$('email').textContent=user.email||'(メールアドレスを取得できません)';}
+   else if(!$('status').classList.contains('error')){$('status').textContent='ログインしていません。';}
+  },e=>showError('ログイン状態の確認に失敗しました',e));
+  $('login').addEventListener('click',async()=>{
+   $('login').disabled=true;$('status').className='';$('status').textContent='Googleログインを開始しています…';
+   try { const result=await auth.signInWithPopup(provider); if(result.user){$('status').className='';$('status').textContent='Googleログイン成功。';} }
+   catch(e){showError('ログインできませんでした',e);}
+   finally {$('login').disabled=false;}
+  });
+  $('logout').addEventListener('click',async()=>{try{await auth.signOut();$('status').className='';$('status').textContent='ログアウトしました。';}catch(e){showError('ログアウトに失敗しました',e);}});
+  $('copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('uid').textContent);$('status').className='';$('status').textContent='UIDをコピーしました。';}catch(e){$('status').textContent='コピーできません。UIDを長押ししてコピーしてください。';}});
+ } catch(e) { showError('Firebaseの初期化に失敗しました',e); }
+})();
+</script></body></html>
